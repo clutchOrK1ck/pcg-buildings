@@ -73,6 +73,3 @@ ManualIPAddress=
 
 [URL]
 GameName=PCGPanelHouseDemo
-
-[CoreRedirects]
-+PackageRedirects=(OldName="/Script/SplineFoliage",NewName="/Script/PCGPanelHouse")

@@ -5,7 +5,7 @@
 	"Description": "",
 	"Modules": [
 		{
-			"Name": "PCGPanelHouse",
+			"Name": "SplineFoliage",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
 		}
