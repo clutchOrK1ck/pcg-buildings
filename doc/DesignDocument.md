@@ -51,6 +51,10 @@ the order of application must be known. The panels are generated from *right to 
 
 The convention is chosen to match the direction a reader would read a text (if viewing the house's front side from the negative x direction)
 
+### Limitations
+
+This grammar can only describe rectangular-shaped panel buildings.
+
 ### Binding indices to panel types
 
 Since the grammar is not aware of the actual panel types, the indices must be bound to actual panel types, where panel types might be enums or objects, similar to the `UDamageType`.
