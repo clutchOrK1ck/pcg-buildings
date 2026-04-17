@@ -4,6 +4,11 @@
 #include "PCGPanelHouse/Public/TemporaryObject.h"
 #include "Algo/Count.h"
 
+constexpr TCHAR GDelimiter = ' ';
+constexpr TCHAR GGroupOpeningChar = '{';
+constexpr TCHAR GGroupClosingChar = '}';
+constexpr TCHAR GRulesetSeparatorChar = '|';
+
 /**
  * check's the rules validity (the rule should be non-empty and must not consist of a single optional panel group)
  * @param Rule 
@@ -38,54 +43,56 @@ bool ValidatePBRule(const FPBRule& Rule, FParsingError& OutError)
 	return true;
 }
 
-bool ParsePBGroup(const FString& Grammar, int& Iterator, FPanelGroup& OutPanelGroup, FParsingError& OutError)
+/**
+ * parses the next panel group (enclosed in '{', '}')
+ *
+ * after parsing the group, the position will be that of the last character of the group definition, i.e.
+ * position of the '+' in '{1-2-3}+'
+ * @param Grammar
+ * @param PositionIn 
+ * @param OutPanelGroup 
+ * @param OutError 
+ * @return 
+ */
+bool ParsePBGroup(const FString& Grammar, int& PositionIn, FPanelGroup& OutPanelGroup, FParsingError& OutError)
 {
 	FString CurrentSubstring;
 
-	if (Iterator >= Grammar.Len())
+	if (PositionIn >= Grammar.Len())
 	{
-		OutError.ErrorAtPosition("Expected panel group, found EOL", Iterator);
+		OutError.ErrorAtPosition("Expected panel group, found EOL", PositionIn);
 		return false;
 	}
 
-	for (int& i = Iterator; i < Grammar.Len(); i++)
+	for (int& Position = PositionIn; Position < Grammar.Len(); Position++)
 	{
-		TCHAR Character = Grammar[i];
+		TCHAR Character = Grammar[Position];
 
 		if (FChar::IsDigit(Character))
 		{
 			CurrentSubstring.AppendChar(Character);
-		}
-		else if (Character == TEXT('-'))
-		{
-			if (CurrentSubstring.IsEmpty())
-			{
-				OutError.ErrorAtPosition("Expected panel index, found '-'", Iterator);
-				return false;
-			}
 
-			OutPanelGroup.PanelIndices.Add(FCString::Atoi(*CurrentSubstring));
-			CurrentSubstring.Empty();
-		}
-		else if (Character == TEXT('{'))
-		{
-			OutError.ErrorAtPosition("Nexted panel groups are not allowed", Iterator);
-			return false;
-		}
-		else if (Character == TEXT('}'))
-		{
-			if (!CurrentSubstring.IsEmpty())
+			if (Position + 1 >= Grammar.Len() || !FChar::IsDigit(Grammar[Position + 1]))
 			{
-				OutPanelGroup.PanelIndices.Add(FCString::Atoi(*CurrentSubstring));
+				OutPanelGroup.PanelIndices.Add(FPBRuleItem<int>(FCString::Atoi(*CurrentSubstring)));
 				CurrentSubstring.Empty();
 			}
-
-			Iterator++;
+		}
+		else if (Character == GDelimiter)
+		{
+		}
+		else if (Character == GGroupOpeningChar)
+		{
+			OutError.ErrorAtPosition("Nested panel groups are not allowed", Position);
+			return false;
+		}
+		else if (Character == GGroupClosingChar)
+		{
 			break;
 		}
 		else
 		{
-			OutError.ErrorAtPosition("Unexpected character", Iterator);
+			OutError.ErrorAtPosition("Unexpected character", Position);
 			return false;
 		}
 	}
@@ -96,28 +103,37 @@ bool ParsePBGroup(const FString& Grammar, int& Iterator, FPanelGroup& OutPanelGr
 		return false;
 	}
 
-	if (Iterator >= Grammar.Len())
+	if (++PositionIn >= Grammar.Len())
 	{
-		OutError.ErrorAtPosition("Expected group reoccurrence specifier, found EOL", Iterator);
+		OutError.ErrorAtPosition("Expected group reoccurrence specifier, found EOL", PositionIn);
 		return false;
 	}
 
 	// group reoccurrence specifier ('*' or '+')
-	TCHAR ReoccurrenceSpecifier = Grammar[Iterator++];
+	TCHAR ReoccurrenceSpecifier = Grammar[PositionIn];
 	if (ReoccurrenceSpecifier == TEXT('+'))
 	{
 		OutPanelGroup.AtLeastOneOccurrence = true;
 	}
 	else if (ReoccurrenceSpecifier != TEXT('*'))
 	{
-		OutError.ErrorAtPosition("Expected a group reoccurrence specifier", Iterator);
+		OutError.ErrorAtPosition("Expected a group reoccurrence specifier", PositionIn);
 		return false;
 	}
 
 	return true;
 }
 
-bool ParsePBGrammar(const FString& Grammar, FPBRuleSet& OutRuleSet, FString& OutErrorMessage, FParsingError& OutError)
+void Flush(FString& AccumulatedDigits, TArray<FPBRuleItem>& Items)
+{
+	if (!AccumulatedDigits.IsEmpty())
+	{
+		Items.Add(FPBRuleItem<int>{FCString::Atoi(*AccumulatedDigits)});
+		AccumulatedDigits.Empty();
+	}
+}
+
+bool ParsePBGrammar(const FString& Grammar, FPBRuleSet& OutRuleSet, FParsingError& OutError)
 {
 	if (Grammar.TrimStartAndEnd().IsEmpty())
 	{
@@ -125,35 +141,32 @@ bool ParsePBGrammar(const FString& Grammar, FPBRuleSet& OutRuleSet, FString& Out
 		return false;
 	}
 
-	FPBRuleSet PBRuleSet;
 	FPBRule CurrentPBRule;
+	CurrentPBRule.Position = 0;
 	FString CurrentSubstring;
 
-	for (int i = 0; i < Grammar.Len(); i++)
+	for (int Position = 0; Position < Grammar.Len(); Position++)
 	{
-		if (const TCHAR Character = Grammar[i]; FChar::IsDigit(Character))
+		if (const TCHAR Character = Grammar[Position]; FChar::IsDigit(Character))
 		{
 			CurrentSubstring.AppendChar(Character);
-		}
-		else if (Character == TEXT('-'))
-		{
-			if (CurrentSubstring.IsEmpty())
-			{
-				OutError.ErrorAtPosition("Expected panel index, found '-'", i);
-				return false;
-			}
 
-			CurrentPBRule.Items.Add(FPBRuleItem<int>{FCString::Atoi(*CurrentSubstring)});
-			CurrentSubstring.Empty();
+			if (Position + 1 >= Grammar.Len() || !FChar::IsDigit(Grammar[Position + 1]))
+			{
+				Flush(CurrentSubstring, CurrentPBRule.Items);
+			}
 		}
-		else if (Character == TEXT('{'))
+		else if (Character == GDelimiter)
+		{
+		}
+		else if (Character == GGroupOpeningChar)
 		{
 			FPanelGroup PanelGroup;
-			PanelGroup.Position = i;
-			
+			PanelGroup.Position = Position;
+
 			FParsingError GroupParsingError;
 
-			auto Success = ParsePBGroup(Grammar, ++i, PanelGroup, GroupParsingError);
+			auto Success = ParsePBGroup(Grammar, ++Position, PanelGroup, GroupParsingError);
 			if (!Success)
 			{
 				OutError.ErrorAtPosition(GroupParsingError.ErrorMessage, GroupParsingError.Position);
@@ -161,34 +174,35 @@ bool ParsePBGrammar(const FString& Grammar, FPBRuleSet& OutRuleSet, FString& Out
 			}
 
 			CurrentPBRule.Items.Add(FPBRuleItem<FPanelGroup>{PanelGroup});
-
-			// EOL after reading the group - validate the current rule before exiting
-			if (i >= Grammar.Len())
-			{
-				if (!ValidatePBRule(CurrentPBRule, OutError))
-				{
-					return false;
-				}
-
-				PBRuleSet.Rules.Add(CurrentPBRule);
-				break;
-			}
 		}
-		else if (Character == TEXT('|'))
+		else if (Character == GRulesetSeparatorChar)
 		{
 			if (!ValidatePBRule(CurrentPBRule, OutError))
 			{
 				return false;
 			}
 
-			PBRuleSet.Rules.Add(CurrentPBRule);
+			OutRuleSet.Rules.Add(CurrentPBRule);
+
+			// initialize a new rule
 			CurrentPBRule = FPBRule();
+			CurrentPBRule.Position = Position + 1;
 		}
 		else
 		{
-			OutError.ErrorAtPosition("Unexpected character", i);
+			OutError.ErrorAtPosition("Unexpected character", Position);
 			return false;
 		}
+	}
+
+	// flush the last-read rule
+	if (!CurrentPBRule.Items.IsEmpty())
+	{
+		if (!ValidatePBRule(CurrentPBRule, OutError))
+		{
+			return false;
+		}
+		OutRuleSet.Rules.Add(CurrentPBRule);
 	}
 
 	return true;

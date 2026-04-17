@@ -93,7 +93,7 @@ struct FParsingError
  * @param OutErrorMessage information on parsing errors
  * @return 
  */
-bool ParsePBGrammar(const FString& Grammar, FPBRuleSet& OutRuleSet, FString& OutErrorMessage);
+bool ParsePBGrammar(const FString& Grammar, FPBRuleSet& OutRuleSet, FParsingError& OutError);
 
 /**
  * 
