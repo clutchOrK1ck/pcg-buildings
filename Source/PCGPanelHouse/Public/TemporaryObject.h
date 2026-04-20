@@ -6,10 +6,6 @@
 #include "UObject/Object.h"
 #include "TemporaryObject.generated.h"
 
-struct FParsedPBExpression
-{
-	int Position; // the position in the grammar that this expression was parsed at
-};
 
 /**
  * describes a reoccurring group of panels
@@ -22,7 +18,7 @@ struct FParsedPBExpression
  * - nested groups are not allowed
  * - a single rule can contain only one panel group
  */
-struct FPanelGroup : FParsedPBExpression
+struct FPanelGroup
 {
 	TArray<int> PanelIndices;
 	bool AtLeastOneOccurrence {false};
@@ -37,7 +33,7 @@ using FPBRuleItem = TVariant<int, FPanelGroup>;
  *
  * 1-2-{1-2-3}*-2-1
  */
-struct FPBRule : FParsedPBExpression
+struct FPBRule
 {
 	TArray<FPBRuleItem> Items;
 };
@@ -78,10 +74,44 @@ struct FParsingError
 	FString ErrorMessage;
 	int Position {-1};
 
-	void ErrorAtPosition(const FString& ErrorMessage, const int Position)
+	FParsingError()
 	{
-		this->ErrorMessage = ErrorMessage;
-		this->Position = Position;
+	}
+	
+	FParsingError(const FParsingError& Other)
+		: ErrorMessage(Other.ErrorMessage),
+		  Position(Other.Position)
+	{
+	}
+
+	FParsingError(FParsingError&& Other) noexcept
+		: ErrorMessage(std::move(Other.ErrorMessage)),
+		  Position(Other.Position)
+	{
+	}
+
+	FParsingError& operator=(const FParsingError& Other)
+	{
+		if (this == &Other)
+			return *this;
+		ErrorMessage = Other.ErrorMessage;
+		Position = Other.Position;
+		return *this;
+	}
+
+	FParsingError& operator=(FParsingError&& Other) noexcept
+	{
+		if (this == &Other)
+			return *this;
+		ErrorMessage = std::move(Other.ErrorMessage);
+		Position = Other.Position;
+		return *this;
+	}
+
+	void ErrorAtPosition(const FString& InErrorMessage, const int InPosition)
+	{
+		this->ErrorMessage = InErrorMessage;
+		this->Position = InPosition;
 	}
 };
 
