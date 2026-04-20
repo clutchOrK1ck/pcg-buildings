@@ -1,4 +1,4 @@
-﻿#include "TemporaryObject.h"
+﻿#include "PBGrammar.h"
 #include "Misc/AutomationTest.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(PBGrammarParserTest, "PCGPanelBuildings.PBGrammarParserTest",
@@ -14,7 +14,8 @@ bool PBGrammarParserTest::RunTest(const FString& Parameters)
 {
 	// TODO this really feels like a usecase for LLT
 	
-	FNegativeTestCase Cases[] = {
+	FNegativeTestCase Cases[1] = {
+		{"{1}*", 0}
 	};
 
 	for (auto NegativeTestCase : Cases)

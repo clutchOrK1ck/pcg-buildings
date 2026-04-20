@@ -3,8 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/Object.h"
-#include "TemporaryObject.generated.h"
+
 
 
 /**
@@ -124,12 +123,3 @@ struct FParsingError
  * @return 
  */
 bool ParsePBGrammar(const FString& Grammar, FPBRuleSet& OutRuleSet, FParsingError& OutError);
-
-/**
- * 
- */
-UCLASS()
-class PCGPANELHOUSE_API UTemporaryObject : public UObject
-{
-	GENERATED_BODY()
-};
