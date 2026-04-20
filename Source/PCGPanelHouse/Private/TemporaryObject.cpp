@@ -27,7 +27,7 @@ bool ParsePBGroup(const FString& Grammar, int& CursorIn, FPanelGroup& OutPanelGr
 	
 	if (CursorIn >= Grammar.Len())
 	{
-		OutError.ErrorAtPosition("Expected panel group, found EOL", CursorIn);
+		OutError.ErrorAtPosition("Expected panel group, found EOL", GroupStartingPosition);
 		return false;
 	}
 
