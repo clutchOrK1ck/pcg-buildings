@@ -39,7 +39,7 @@ struct FPBRule
 
 enum EPanelBuildingSide
 {
-	Front,
+	Front = 0,
 	Right,
 	Back,
 	Left
@@ -60,9 +60,12 @@ enum EPanelBuildingSide
  */
 struct FPBRuleSet
 {
+	// if the number of rules actually stored is less than the index of requested side, we "complete" the rule
+	static const int CompletionRules[][4];
+	
 	TArray<FPBRule> Rules; // rules defined by the user
 	
-	const FPBRule GetPBRule(EPanelBuildingSide Side) const;
+	const FPBRule& GetPBRule(const EPanelBuildingSide Side) const;
 };
 
 /**

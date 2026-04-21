@@ -7,6 +7,14 @@ constexpr TCHAR GGroupOpeningChar = '{';
 constexpr TCHAR GGroupClosingChar = '}';
 constexpr TCHAR GRulesetSeparatorChar = '|';
 
+const int FPBRuleSet::CompletionRules[][4] = {
+	{-1, -1, -1, -1},		// 0 rules - impossible case
+	{0, 0, 0, 0},			// 1 rule (front) => front, front, front, front
+	{0, 1, 0, 1},			// 2 rules (front, right) => front, right, front, right
+	{0, 1, 2, 1},			// 3 rules (front, right, back) => front, right, back, right
+	{0, 1, 2, 3}			// 4 rules (front, right, back, left) => front, right, back, left
+};
+
 /**
  * parses the next panel group (enclosed in '{', '}')
  *
@@ -55,6 +63,10 @@ bool ParsePBGroup(const FString& Grammar, int& CursorIn, FPanelGroup& OutPanelGr
 		else if (Character == GGroupClosingChar)
 		{
 			HasReachedGroupClosingChar = true;
+			break;
+		} else if (Character == GRulesetSeparatorChar)
+		{
+			// we don't throw unexpected char here - instead treat this as the group missing its closing char
 			break;
 		}
 		else
@@ -112,7 +124,8 @@ bool ParsePBGroup(const FString& Grammar, int& CursorIn, FPanelGroup& OutPanelGr
 bool ParsePBRule(const FString& Grammar, int& CursorIn, FPBRule& OutRule, FParsingError& OutError)
 {
 	FString DigitAccumulator;
-	int RuleStartingPosition = CursorIn;
+	// rule starts at 0 if this is the first rule, or at its opening pipe
+	int RuleStartingPosition = CursorIn == 0 ? CursorIn : CursorIn - 1;
 	bool HasGroup {false};
 
 	if (CursorIn >= Grammar.Len())
@@ -189,6 +202,13 @@ bool ParsePBRule(const FString& Grammar, int& CursorIn, FPBRule& OutRule, FParsi
 	return true;
 }
 
+const FPBRule& FPBRuleSet::GetPBRule(const EPanelBuildingSide Side) const
+{
+	return this->Rules[
+		this->CompletionRules[this->Rules.Num()][static_cast<int>(Side)]
+	];
+}
+
 bool ParsePBGrammar(const FString& Grammar, FPBRuleSet& OutRuleSet, FParsingError& OutError)
 {
 	if (Grammar.TrimStartAndEnd().IsEmpty())
@@ -198,12 +218,19 @@ bool ParsePBGrammar(const FString& Grammar, FPBRuleSet& OutRuleSet, FParsingErro
 	}
 
 	int Cursor {0};
+	int NumberOfRules {0}; // number of rules parsed
 	
 	while (Cursor < Grammar.Len())
 	{
 		// cursor at the ruleset separator after reading the previous rule
 		if (Cursor > 0 && Grammar[Cursor] == GRulesetSeparatorChar)
 		{
+			if (NumberOfRules >= 4)
+			{
+				OutError.ErrorAtPosition("Rules cannot exceed 4", Cursor);
+				return false;
+			}
+			
 			Cursor++;
 		}
 		
@@ -217,6 +244,7 @@ bool ParsePBGrammar(const FString& Grammar, FPBRuleSet& OutRuleSet, FParsingErro
 		}
 
 		OutRuleSet.Rules.Add(Rule);
+		NumberOfRules++;
 	}
 
 	return true;
