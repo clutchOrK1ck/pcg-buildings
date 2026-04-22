@@ -8,6 +8,11 @@
 			"Name": "PCGPanelHouse",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "PCGPanelHouseEditor",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
 		}
 	],
 	"Plugins": [
