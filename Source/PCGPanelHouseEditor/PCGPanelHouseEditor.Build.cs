@@ -19,7 +19,9 @@ public class PCGPanelHouseEditor : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "Slate",
-                "SlateCore"
+                "SlateCore",
+                "PCGPanelHouse",
+                "UnrealEd"
             }
         );
     }
