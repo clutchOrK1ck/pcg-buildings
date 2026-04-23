@@ -2,8 +2,6 @@
 
 
 #include "PBPanelLayoutFactory.h"
-
-#include "AssetTypeCategories.h"
 #include "PBPanelLayout.h"
 
 UPBPanelLayoutFactory::UPBPanelLayoutFactory()
@@ -20,17 +18,7 @@ UObject* UPBPanelLayoutFactory::FactoryCreateNew(UClass* InClass, UObject* InPar
 	return NewObject<UPBPanelLayout>(InParent, InClass, InName, Flags | RF_Transactional);
 }
 
-FText UPBPanelLayoutFactory::GetDisplayName() const
-{
-	return FText::FromString("PB panel layout factory");
-}
-
-uint32 UPBPanelLayoutFactory::GetMenuCategories() const
-{
-	return EAssetTypeCategories::Misc;
-}
-
 FText UPBPanelLayoutFactory::GetToolTip() const
 {
-	return FText::FromString("A factory creating an panel building's panel layout asset");
+	return FText::FromString("Create a panel layout");
 }

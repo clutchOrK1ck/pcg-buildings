@@ -18,7 +18,5 @@ public:
 	UPBPanelLayoutFactory();
 	virtual UObject* FactoryCreateNew(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags,
 	                                  UObject* Context, FFeedbackContext* Warn) override;
-	virtual FText GetDisplayName() const override;
-	virtual uint32 GetMenuCategories() const override;
 	virtual FText GetToolTip() const override;
 };

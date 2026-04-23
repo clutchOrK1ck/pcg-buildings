@@ -9,12 +9,12 @@ FColor FPBPanelLayoutAssetActions::GetTypeColor() const
 
 uint32 FPBPanelLayoutAssetActions::GetCategories()
 {
-	return EAssetTypeCategories::Misc;
+	return CategoryId;
 }
 
 FText FPBPanelLayoutAssetActions::GetName() const
 {
-	return FText::FromString("Panel layout");
+	return FText::FromString("Panel Layout");
 }
 
 UClass* FPBPanelLayoutAssetActions::GetSupportedClass() const
