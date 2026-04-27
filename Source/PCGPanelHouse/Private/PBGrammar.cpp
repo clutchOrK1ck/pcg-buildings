@@ -1,6 +1,9 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
+#include "Algo/Accumulate.h"
 #include "PBGrammar.h"
+
+#include "Algo/MaxElement.h"
 
 constexpr TCHAR GDelimiter = ' ';
 constexpr TCHAR GGroupOpeningChar = '{';
@@ -248,4 +251,228 @@ bool ParsePBGrammar(const FString& Grammar, FPBRuleSet& OutRuleSet, FParsingErro
 	}
 
 	return true;
+}
+
+float CalculateLength(const TArray<FPanelPlacement>& Placements)
+{
+	float AccumulatedLength {0.};
+	
+	for (const FPanelPlacement& Placement : Placements)
+	{
+		if (Placement.IsRepeatableGroup)
+		{
+			const float GroupLength  = Algo::TransformAccumulate(
+				Placement.Panels,
+				[](const UPBPanelLayout* Panel)
+				{
+					return Panel->Width;
+				},
+				0.0f,
+				[](float Accum, float Val)
+				{
+					return Accum + Val;
+				});
+			AccumulatedLength += GroupLength * Placement.Repeat;
+		}  else
+		{
+			AccumulatedLength += Placement.Panels[0]->Width;
+		}
+	}
+
+	return AccumulatedLength;
+}
+
+/**
+ * place panels according to a rule and take the maximum wall length into consideration
+ * 
+ * @param InRule 
+ * @param MaximumLength 
+ * @param OutPlacements 
+ * @return 
+ */
+float GeneratePlacements(const FPBRule& InRule, const TArray<UPBPanelLayout*>& PanelDefinitions, float MaximumLength, TArray<FPanelPlacement>& OutPlacements)
+{
+	float AccumulatedLength;
+	
+	for (const auto& PanelIdx : InRule.Items)
+	{
+		if (PanelIdx.IsType<int>())
+		{
+			// add a single panel
+			OutPlacements.Add(
+				FPanelPlacement{
+					false,
+					TArray<UPBPanelLayout*>{PanelDefinitions[PanelIdx.Get<int>()]},
+					1
+				});
+		} else
+		{
+			const auto& PanelGroup = PanelIdx.Get<FPanelGroup>();
+			TArray<UPBPanelLayout*> GroupPanels;
+
+			FPanelPlacement GroupPanelPlacement{
+				true,
+				TArray<UPBPanelLayout*>{},
+				PanelIdx.Get<FPanelGroup>().AtLeastOneOccurrence ? 1 : 0
+			};
+			
+			Algo::Transform(PanelGroup.PanelIndices, GroupPanelPlacement.Panels, [&PanelDefinitions](const int& Idx)
+			{
+				return PanelDefinitions[Idx]; // TODO handle improper grammars with indices pointing to non-existing panels
+			});
+			
+			// add a panel group with minimum number of repetitions so far
+			OutPlacements.Add(
+				FPanelPlacement{
+					true,
+					GroupPanels,
+					PanelIdx.Get<FPanelGroup>().AtLeastOneOccurrence ? 1 : 0
+				});
+		}
+	}
+
+	AccumulatedLength = CalculateLength(OutPlacements);
+	while (AccumulatedLength < MaximumLength)
+	{
+		FPanelPlacement* RepeatableGroup = OutPlacements.FindByPredicate([](const FPanelPlacement& Placement)
+		{
+			return Placement.IsRepeatableGroup;
+		});
+
+		if (RepeatableGroup)
+		{
+			RepeatableGroup->Repeat += 1;
+			AccumulatedLength = CalculateLength(OutPlacements); // TODO this introduces potential overshooting, may need to control for that
+		} else
+		{
+			break;
+		}
+	}
+
+	return AccumulatedLength;
+}
+
+/**
+ * get direction to shift panel placement
+ *
+ * this results in a clockwise shifting around the building (viewed from the top)
+ * @param ForSide 
+ * @return 
+ */
+FVector GetShiftDirection(EPanelBuildingSide ForSide)
+{
+	switch (ForSide)
+	{
+	case Front:
+		return FVector{0., 1., 0.};
+	case Right:
+		return FVector{-1., 0., 0.};
+	case Back:
+		return FVector{0., -1., 0.};
+	case Left:
+		return FVector{1., 0., 0.};
+	}
+
+	return FVector{};
+}
+
+void PositionPanelAndShiftLocation(UPBPanelLayout* Layout,
+	FVector& LastPositionedPanelCornerLocation,
+	EPanelBuildingSide BuildingSide,
+	TArray<FPositionedPanelInfo>& OutPositions)
+{
+	OutPositions.Add(
+		FPositionedPanelInfo{
+			0,
+			BuildingSide,
+			LastPositionedPanelCornerLocation
+			+ GetShiftDirection(BuildingSide) * Layout->Width / 2.
+			+ FVector::UpVector * Layout->Height / 2.,
+			Layout
+		}
+	);
+	LastPositionedPanelCornerLocation += GetShiftDirection(BuildingSide) * Layout->Width;
+}
+
+void PositionPanels(const TArray<FPanelPlacement>& Placements,
+	EPanelBuildingSide BuildingSide,
+	FVector& LastPositionedPanelCornerLocation,
+	TArray<FPositionedPanelInfo>& OutPositions)
+{
+	for (const FPanelPlacement& Placement : Placements)
+	{
+		if (Placement.IsRepeatableGroup)
+		{
+			for (int i = 0; i < Placement.Repeat; i++)
+			{
+				for (UPBPanelLayout* PanelLayout : Placement.Panels)
+				{
+					PositionPanelAndShiftLocation(PanelLayout, LastPositionedPanelCornerLocation, BuildingSide, OutPositions);
+				}
+			}
+		} else
+		{
+			PositionPanelAndShiftLocation(Placement.Panels[0], LastPositionedPanelCornerLocation, BuildingSide, OutPositions);
+		}
+	}
+}
+
+void UPCGPanelHouseGrammar::FitPanelsToBoundingBox(const FPBRuleSet& PanelHouseRuleSet, const FBox& BoundingBox,
+	const TArray<UPBPanelLayout*>& Panels, TArray<FPositionedPanelInfo>& OutPanels)
+{
+	TArray<FPanelPlacement> FrontalPlacements;
+	TArray<FPanelPlacement> RightPlacements;
+	TArray<FPanelPlacement> BackPlacements;
+	TArray<FPanelPlacement> LeftPlacements;
+
+	const float FrontalWidth = GeneratePlacements(
+		PanelHouseRuleSet.GetPBRule(Front),
+		Panels,
+		BoundingBox.GetSize().X,
+		FrontalPlacements);
+
+	const float RightDepth = GeneratePlacements(
+		PanelHouseRuleSet.GetPBRule(Right),
+		Panels,
+		BoundingBox.GetSize().Y,
+		RightPlacements);
+
+	GeneratePlacements(
+		PanelHouseRuleSet.GetPBRule(Back),
+		Panels,
+		FrontalWidth,
+		BackPlacements);
+
+	GeneratePlacements(
+		PanelHouseRuleSet.GetPBRule(Left),
+		Panels,
+		RightDepth,
+		LeftPlacements);
+	
+	// create the actual locations
+	FVector LastPositionedPanelCornerLocation{
+		BoundingBox.Max.X,
+		BoundingBox.Min.Y,
+		BoundingBox.Min.Z // start in front, on the left, and at the bottom
+	};
+	
+	// 0th floor, other floors can inherit from this base
+	PositionPanels(FrontalPlacements, Front, LastPositionedPanelCornerLocation, OutPanels);
+	PositionPanels(RightPlacements, Right, LastPositionedPanelCornerLocation, OutPanels);
+	PositionPanels(BackPlacements, Back, LastPositionedPanelCornerLocation, OutPanels);
+	PositionPanels(LeftPlacements, Left, LastPositionedPanelCornerLocation, OutPanels);
+}
+
+void UPCGPanelHouseGrammar::ParseGrammar(const FString& Grammar, FPBRuleSet& OutRuleSet, bool& Success,
+	FString& ErrorString)
+{
+	FParsingError ParsingError;
+	ParsePBGrammar(Grammar, OutRuleSet, ParsingError);
+	if (!ParsingError.ErrorMessage.IsEmpty())
+	{
+		Success = false;
+		ErrorString = ParsingError.ErrorMessage;
+	}
+
+	Success = true;
 }

@@ -28,13 +28,18 @@ public:
 	UPROPERTY(EditAnywhere, Category="Spatial|Window")
 	bool HasWindow;
 
+	// window width in cm
 	UPROPERTY(EditAnywhere, DisplayName="Width", Category="Spatial|Window")
 	float WindowWidth;
 
+	// window height in cm
 	UPROPERTY(EditAnywhere, DisplayName="Height", Category="Spatial|Window")
 	float WindowHeight;
 
-	// to be decided if cm, percentage, and relative to center or corner
+	/** window's position is its location as percentage of panels' width and height
+	 *
+	 * for example, (0.5, 0.5) would mean in the center of the panel
+	 */
 	UPROPERTY(EditAnywhere, DisplayName="Position", Category="Spatial|Window")
 	FVector2f WindowPosition;
 
