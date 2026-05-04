@@ -215,25 +215,25 @@ const FPBRule& FPBRuleSet::GetPBRule(const EPanelBuildingSide Side) const
 	];
 }
 
-const TSet<int>& FPBRuleSet::GetIndices()
+void FPBRuleSet::UpdateReferencedIndices()
 {
-	if (Indices.IsEmpty())
+	for (auto& Rule : this->Rules)
 	{
-		for (auto& Rule : this->Rules)
+		for (auto& Item : Rule.Items)
 		{
-			for (auto& Item : Rule.Items)
+			if (Item.IsType<int>())
 			{
-				if (Item.IsType<int>())
-				{
-					Indices.Add(Item.Get<int>());
-				} else
-				{
-					Indices.Append(Item.Get<FPanelGroup>().PanelIndices);
-				}
+				Indices.Add(Item.Get<int>());
+			} else
+			{
+				Indices.Append(Item.Get<FPanelGroup>().PanelIndices);
 			}
 		}
 	}
+}
 
+const TSet<int>& FPBRuleSet::GetIndices() const
+{
 	return Indices;
 }
 
@@ -275,6 +275,7 @@ bool ParsePBGrammar(const FString& Grammar, FPBRuleSet& OutRuleSet, FParsingErro
 		NumberOfRules++;
 	}
 
+	OutRuleSet.UpdateReferencedIndices();
 	return true;
 }
 
@@ -453,8 +454,13 @@ void PositionPanels(const TArray<FPanelPlacement>& Placements,
 	}
 }
 
-bool CheckRulesetReferencesValidIndex(FPBRuleSet& Ruleset, const int NumPanelDefinitions)
+bool CheckRulesetReferencesValidIndex(const FPBRuleSet& Ruleset, const int NumPanelDefinitions)
 {
+	if (Ruleset.GetIndices().IsEmpty())
+	{
+		return true;
+	}
+	
 	if (const int* MaxIndex = Algo::MaxElement(Ruleset.GetIndices()); *MaxIndex >= NumPanelDefinitions)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Ruleset references an invalid index %d"), *MaxIndex);
@@ -478,10 +484,15 @@ bool CheckValidPanelDefinitions(const TArray<UPBPanelLayout*>& Panels)
 	return true;
 }
 
-bool UPCGPanelBuildingHelpers::FitPanelsToBoundingBox(FPBRuleSet& PanelHouseRuleSet, const FBox& BoundingBox,
+bool UPCGPanelBuildingHelpers::FitPanelsToBoundingBox(const FPBRuleSet& PanelHouseRuleSet, const FBox& BoundingBox,
                                                    const TArray<UPBPanelLayout*>& Panels,
                                                    TArray<FPositionedPanelInfo>& OutPanels)
 {
+	if (PanelHouseRuleSet.Rules.IsEmpty())
+	{
+		return false;
+	}
+	
 	if (!(CheckValidPanelDefinitions(Panels) && CheckRulesetReferencesValidIndex(PanelHouseRuleSet, Panels.Num())))
 	{
 		return false;
@@ -540,8 +551,33 @@ void UPCGPanelBuildingHelpers::ParseGrammar(const FString& Grammar, FPBRuleSet& 
 	if (!ParsingError.ErrorMessage.IsEmpty())
 	{
 		Success = false;
-		ErrorString = ParsingError.ErrorMessage;
+
+		// build the error message
+		ErrorString = "Error while parsing grammar ";
+		ErrorString += "'" + Grammar + "'";
+		ErrorString += " | ";
+		ErrorString += "Msg: ";
+		ErrorString += ParsingError.ErrorMessage;
+		ErrorString += " | ";
+		ErrorString += "At: ";
+		ErrorString += FString::FromInt(ParsingError.Position);
+
+		if (ParsingError.Position >= 0)
+		{
+			ErrorString += " | ";
+			ErrorString += Grammar.Left(ParsingError.Position + 1) + " <- here";
+		}
+		
+		return;
 	}
 
 	Success = true;
+}
+
+void UPCGPanelBuildingHelpers::GetReferencedIndices(const FPBRuleSet& RuleSet, TArray<int>& Indices)
+{
+	for (const auto& Idx : RuleSet.GetIndices())
+	{
+		Indices.Add(Idx);
+	}
 }

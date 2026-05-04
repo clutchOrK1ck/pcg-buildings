@@ -68,14 +68,17 @@ struct FPBRuleSet
 private:
 	// if the number of rules actually stored is less than the index of requested side, we "complete" the rule
 	static const int CompletionRules[][4];
-	TSet<int> Indices; // panel indices that are referenced by this ruleset
+	TSet<int> Indices {}; // panel indices that are referenced by this ruleset
 
 public:
 	TArray<FPBRule> Rules; // rules defined by the user
 	
 	const FPBRule& GetPBRule(const EPanelBuildingSide Side) const;
 
-	const TSet<int>& GetIndices();
+	// collects panel indices referenced by this panel
+	void UpdateReferencedIndices();
+	
+	const TSet<int>& GetIndices() const;
 };
 
 /**
@@ -190,8 +193,11 @@ public:
 	 * @param OutPanels an array of panel info (position, meta, etc.) that can be used to generate PCG point data
 	 */
 	UFUNCTION(BlueprintCallable)
-	static bool FitPanelsToBoundingBox(FPBRuleSet& PanelHouseRuleSet, const FBox& BoundingBox, const TArray<UPBPanelLayout*>& Panels, TArray<FPositionedPanelInfo>& OutPanels);
+	static bool FitPanelsToBoundingBox(const FPBRuleSet& PanelHouseRuleSet, const FBox& BoundingBox, const TArray<UPBPanelLayout*>& Panels, TArray<FPositionedPanelInfo>& OutPanels);
 
 	UFUNCTION(BlueprintCallable)
 	static void ParseGrammar(const FString& Grammar, FPBRuleSet& OutRuleSet, bool& Success, FString& ErrorString);
+
+	UFUNCTION(BlueprintCallable)
+	static void GetReferencedIndices(const FPBRuleSet& RuleSet, TArray<int>& Indices);
 };

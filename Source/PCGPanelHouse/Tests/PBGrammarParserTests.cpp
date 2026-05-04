@@ -62,7 +62,10 @@ bool PBGrammarParserTestNegatives::RunTest(const FString& Parameters)
 
 		// no empty groups
 		{" 1 2 | {} |", 7}, // note that this one also breaks multiple other rules
-		{"1 2 | {}+ 2 | {}*", 6}
+		{"1 2 | {}+ 2 | {}*", 6},
+
+		// grammars containing invalid symbols
+		{"asdfasdf", 0}
 	};
 
 	for (const auto& NegativeTestCase : Cases)
@@ -248,7 +251,8 @@ void SimpleFitInBoundingBox(FPBRuleSet& OutRuleSet,
 			}
 		}
 	});
-	
+
+	OutRuleSet.UpdateReferencedIndices();
 	
 	TestCaseDescr = "Fitting a simple ruleset into bounding box should work";
 	Expect = true;
