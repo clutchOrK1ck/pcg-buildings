@@ -17,6 +17,9 @@ class PCGPANELHOUSE_API UPBPanelLayout : public UObject
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(EditAnywhere, Category="Meta")
+	FString Id;
+	
 	// panel height in cm
 	UPROPERTY(EditAnywhere, Category="Spatial")
 	float Width;

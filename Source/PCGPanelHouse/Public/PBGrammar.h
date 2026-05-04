@@ -64,13 +64,18 @@ USTRUCT(BlueprintType)
 struct FPBRuleSet
 {
 	GENERATED_BODY()
-	
+
+private:
 	// if the number of rules actually stored is less than the index of requested side, we "complete" the rule
 	static const int CompletionRules[][4];
-	
+	TSet<int> Indices; // panel indices that are referenced by this ruleset
+
+public:
 	TArray<FPBRule> Rules; // rules defined by the user
 	
 	const FPBRule& GetPBRule(const EPanelBuildingSide Side) const;
+
+	const TSet<int>& GetIndices();
 };
 
 /**
@@ -133,17 +138,16 @@ struct FParsingError
 bool ParsePBGrammar(const FString& Grammar, FPBRuleSet& OutRuleSet, FParsingError& OutError);
 
 
-
 USTRUCT(BlueprintType)
 struct FPositionedPanelInfo
 {
 	GENERATED_BODY()
 	
 	UPROPERTY(BlueprintReadOnly)
-	int FloorOffset;
+	int FloorOffset {0};
 
 	UPROPERTY(BlueprintReadOnly)
-	TEnumAsByte<EPanelBuildingSide> Position;
+	TEnumAsByte<EPanelBuildingSide> Position {Front};
 
 	/**
 	 * assigned panel location and rotation
@@ -151,10 +155,10 @@ struct FPositionedPanelInfo
 	 * the first panel will be positioned in front and on the left of the bounding box
 	 */
 	UPROPERTY(BlueprintReadOnly)
-	FVector AssignedLocation;
+	FVector AssignedLocation {FVector::ZeroVector};
 	
 	UPROPERTY(BlueprintReadOnly)
-	TObjectPtr<UPBPanelLayout> PanelLayout; // a reference to the panel layout for this panel
+	TObjectPtr<UPBPanelLayout> PanelLayout {nullptr}; // a reference to the panel layout for this panel
 };
 
 /**
@@ -164,13 +168,13 @@ struct FPositionedPanelInfo
  */
 struct FPanelPlacement
 {
-	bool IsRepeatableGroup;				// it is a group of panels, to be repeated zero or more times
+	bool IsRepeatableGroup {false};				// it is a group of panels, to be repeated zero or more times
 	TArray<UPBPanelLayout*> Panels;		// panels in this group
-	int Repeat;							// how many times this group is repeated
+	int Repeat {0};							// how many times this group is repeated
 };
 
 UCLASS()
-class PCGPANELHOUSE_API UPCGPanelHouseGrammar : public UBlueprintFunctionLibrary
+class PCGPANELHOUSE_API UPCGPanelBuildingHelpers : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 
@@ -186,7 +190,7 @@ public:
 	 * @param OutPanels an array of panel info (position, meta, etc.) that can be used to generate PCG point data
 	 */
 	UFUNCTION(BlueprintCallable)
-	static void FitPanelsToBoundingBox(const FPBRuleSet& PanelHouseRuleSet, const FBox& BoundingBox, const TArray<UPBPanelLayout*>& Panels, TArray<FPositionedPanelInfo>& OutPanels);
+	static bool FitPanelsToBoundingBox(FPBRuleSet& PanelHouseRuleSet, const FBox& BoundingBox, const TArray<UPBPanelLayout*>& Panels, TArray<FPositionedPanelInfo>& OutPanels);
 
 	UFUNCTION(BlueprintCallable)
 	static void ParseGrammar(const FString& Grammar, FPBRuleSet& OutRuleSet, bool& Success, FString& ErrorString);

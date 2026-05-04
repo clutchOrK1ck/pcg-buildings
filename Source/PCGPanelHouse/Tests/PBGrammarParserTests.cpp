@@ -9,6 +9,9 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(PBGrammarParserTestNegatives, "PCGPanelBuilding
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(PBGrammarParserTestPositives, "PCGPanelBuildings.PBGrammarParserTest.Positives",
                                  EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(PBFittingAlgorithmTests, "PCGPanelBuildings.FittingAlgorithm",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
 struct FNegativeTestCase
 {
 	FString TestGrammar; // the grammar that should fail to be parsed
@@ -177,3 +180,168 @@ bool PBGrammarParserTestPositives::RunTest(const FString& Parameters)
 	
 	return true;
 }
+
+using FDataGenerator = TFunction<void(FPBRuleSet&, TArray<UPBPanelLayout*>&, FBox&, bool&, FString&)>;
+
+void SimpleFitInBoundingBox(FPBRuleSet& OutRuleSet,
+	TArray<UPBPanelLayout*>& OutLayouts,
+	FBox& OutBoundingBox,
+	bool& Expect,
+	FString& TestCaseDescr)
+{
+	// a wide panel with wide window
+	if (!OutLayouts.IsValidIndex(0))
+	{
+		OutLayouts.Add(NewObject<UPBPanelLayout>());
+	}
+	OutLayouts[0]->Id = "WideW";
+	OutLayouts[0]->Width = 360.f;
+	OutLayouts[0]->Height = 240.f;
+	OutLayouts[0]->HasWindow = true;
+	OutLayouts[0]->WindowHeight = 140.f;
+	OutLayouts[0]->WindowWidth = 280.f;
+	OutLayouts[0]->WindowPosition = FVector2f{0.5f, 0.5f};
+
+	// a narrow panel with a narrow window
+	if (!OutLayouts.IsValidIndex(1))
+	{
+		OutLayouts.Add(NewObject<UPBPanelLayout>());
+	}
+	OutLayouts[1]->Id = "NarrowW";
+	OutLayouts[1]->Width = 200.f;
+	OutLayouts[1]->Height = 240.f;
+	OutLayouts[1]->HasWindow = true;
+	OutLayouts[1]->WindowHeight = 140.f;
+	OutLayouts[1]->WindowWidth = 120.f;
+	OutLayouts[1]->WindowPosition = FVector2f{0.5f, 0.5f};
+
+	// 30 m wide, 10 m deep, 20 m tall
+	OutBoundingBox = FBox{
+		FVector{0., 0., 0.},
+		FVector{1000., 3000., 2000.}
+	};
+
+	// ruleset:
+	// - front: repeat narrow-wide-narrow all the way
+	
+	OutRuleSet.Rules.Add(FPBRule{
+		{
+			FPBRuleItem{
+				TInPlaceType<FPanelGroup>(),
+				FPanelGroup{
+					{1, 0, 1},
+					true
+				}
+			}
+		}
+	});
+
+	// - side: repeat narrow-narrow all the way
+	OutRuleSet.Rules.Add(FPBRule{
+		{
+			FPBRuleItem{
+				TInPlaceType<FPanelGroup>(),
+				FPanelGroup{
+					{1, 1},
+					true
+				}
+			}
+		}
+	});
+	
+	
+	TestCaseDescr = "Fitting a simple ruleset into bounding box should work";
+	Expect = true;
+}
+
+void BoundingBoxOverflowTest(FPBRuleSet& OutRuleSet,
+	TArray<UPBPanelLayout*>& OutLayouts,
+	FBox& OutBoundingBox,
+	bool& Expect,
+	FString& TestCaseDescr)
+{
+	SimpleFitInBoundingBox(OutRuleSet, OutLayouts, OutBoundingBox, Expect, TestCaseDescr);
+
+	// bounding box is too small (the minimum required panels still get generated)
+	OutBoundingBox = FBox{
+		FVector{0., 0., 0.},
+		FVector{1., 1., 1.}
+	};
+
+	Expect = true;
+	TestCaseDescr = "Fitting a ruleset into a too small bounding box still generates minimum required panels";
+}
+
+FString ToString(const EPanelBuildingSide& Side)
+{
+	switch (Side)
+	{
+	case Front:
+		return "front";
+	case Right:
+		return "right";
+	case Back:
+		return "back";
+	case Left:
+		return "left";
+	default:
+		return "left";
+	}
+}
+void PositionedPanelsToString(const TArray<FPositionedPanelInfo>& PositionedPanels, FString& OutString)
+{
+	EPanelBuildingSide CurrentSide = Front;
+	TArray<FString> Parts;
+
+	for (const auto& PositionedPanel : PositionedPanels)
+	{
+		if (PositionedPanel.Position != CurrentSide || Parts.IsEmpty())
+		{
+			Parts.Add("[" + ToString(PositionedPanel.Position) + "]");
+			CurrentSide = PositionedPanel.Position;
+		}
+
+		Parts.Add(PositionedPanel.PanelLayout->Id + "@" + PositionedPanel.AssignedLocation.ToString());
+	}
+
+	OutString = FString::Join(Parts, TEXT("\n"));
+}
+
+bool PBFittingAlgorithmTests::RunTest(const FString& Parameters)
+{
+	// just checking that no crashes or nullptr exceptions can occur
+	TArray<FDataGenerator> DataGenerators {
+		&SimpleFitInBoundingBox,
+		&BoundingBoxOverflowTest
+	};
+
+	// run test cases
+	for (const FDataGenerator& TestDataGenerator : DataGenerators)
+	{
+		FPBRuleSet RuleSet;
+		TArray<UPBPanelLayout*> Layouts;
+		FBox BoundingBox;
+		bool Expect;
+		TArray<FPositionedPanelInfo> OutPositionedPanels;
+		FString TestCaseDescription;
+
+		TestDataGenerator(RuleSet, Layouts, BoundingBox, Expect, TestCaseDescription);
+
+		const auto Result = UPCGPanelBuildingHelpers::FitPanelsToBoundingBox(RuleSet, BoundingBox, Layouts, OutPositionedPanels);
+		if (Result != Expect)
+		{
+			this->AddError("Unexpected result for test case: " + TestCaseDescription);
+			continue;
+		}
+
+		if (Result)
+		{
+			FString PositionedPanels;
+			PositionedPanelsToString(OutPositionedPanels, PositionedPanels);
+			this->AddInfo("Fitting algorithm resulted in the following assignment: \n" + PositionedPanels);
+		}
+	}
+	
+	return true;
+}
+
