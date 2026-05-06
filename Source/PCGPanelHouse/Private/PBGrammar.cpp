@@ -237,6 +237,23 @@ const TSet<int>& FPBRuleSet::GetIndices() const
 	return Indices;
 }
 
+FString ToString(const FParsingError& ParsingError, const FString& Grammar)
+{
+	FString ErrorMsg;
+
+	ErrorMsg += "Grammar parsing error: '" + Grammar + "'\n";
+	ErrorMsg += "ErrorMsg: " + ParsingError.ErrorMessage + "\n";
+
+	if (ParsingError.Position >= 0)
+	{
+		ErrorMsg += "Loc:\n";
+		ErrorMsg += Grammar + "\n";
+		ErrorMsg += FString::ChrN(ParsingError.Position, TEXT(' ')) + "^";
+	}
+	
+	return ErrorMsg;
+}
+
 bool ParsePBGrammar(const FString& Grammar, FPBRuleSet& OutRuleSet, FParsingError& OutError)
 {
 	if (Grammar.TrimStartAndEnd().IsEmpty())
@@ -551,23 +568,7 @@ void UPCGPanelBuildingHelpers::ParseGrammar(const FString& Grammar, FPBRuleSet& 
 	if (!ParsingError.ErrorMessage.IsEmpty())
 	{
 		Success = false;
-
-		// build the error message
-		ErrorString = "Error while parsing grammar ";
-		ErrorString += "'" + Grammar + "'";
-		ErrorString += " | ";
-		ErrorString += "Msg: ";
-		ErrorString += ParsingError.ErrorMessage;
-		ErrorString += " | ";
-		ErrorString += "At: ";
-		ErrorString += FString::FromInt(ParsingError.Position);
-
-		if (ParsingError.Position >= 0)
-		{
-			ErrorString += " | ";
-			ErrorString += Grammar.Left(ParsingError.Position + 1) + " <- here";
-		}
-		
+		ErrorString = ToString(ParsingError, Grammar);
 		return;
 	}
 

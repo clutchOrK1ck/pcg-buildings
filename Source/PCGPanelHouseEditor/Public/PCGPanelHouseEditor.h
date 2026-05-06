@@ -8,6 +8,9 @@ class FPCGPanelHouseEditorModule : public IModuleInterface
 {
     TSharedPtr<FPBPanelLayoutAssetActions> PBPanelLayoutAssetActions;
 	EAssetTypeCategories::Type AssetCategoryId {EAssetTypeCategories::Misc};
+
+	void RegisterMessageLogCategory();
+	void UnregisterMessageLogCategory();
     
 public:
     virtual void StartupModule() override;

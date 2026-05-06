@@ -21,7 +21,8 @@ public class PCGPanelHouseEditor : ModuleRules
                 "Slate",
                 "SlateCore",
                 "PCGPanelHouse",
-                "UnrealEd"
+                "UnrealEd",
+                "MessageLog"
             }
         );
     }

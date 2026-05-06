@@ -130,6 +130,8 @@ struct FParsingError
 	}
 };
 
+FString ToString(const FParsingError& ParsingError, const FString& Grammar);
+
 /**
  * parse a grammar string (like 1-2-{2-3}+-2-1)
  * 
