@@ -11,6 +11,8 @@ class FPCGPanelHouseEditorModule : public IModuleInterface
 
 	void RegisterMessageLogCategory();
 	void UnregisterMessageLogCategory();
+	void RegisterComponentVisualizers();
+	void UnregisterComponentVisualizers();
     
 public:
     virtual void StartupModule() override;

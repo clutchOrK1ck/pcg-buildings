@@ -12,7 +12,7 @@
 		{
 			"Name": "PCGPanelHouseEditor",
 			"Type": "Editor",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "PostEngineInit"
 		}
 	],
 	"Plugins": [

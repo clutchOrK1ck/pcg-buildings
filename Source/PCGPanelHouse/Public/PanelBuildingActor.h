@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "PanelBuildingBounds.h"
 #include "PCGComponent.h"
 #include "PBGrammar.h"
 #include "GameFramework/Actor.h"
@@ -32,6 +33,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
 	UPCGComponent* PCG;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
+	UPanelBuildingBounds* Boundaries;
 	
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

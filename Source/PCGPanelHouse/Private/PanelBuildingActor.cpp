@@ -15,6 +15,7 @@ APanelBuildingActor::APanelBuildingActor()
 	PrimaryActorTick.bCanEverTick = false;
 
 	PCG = CreateDefaultSubobject<UPCGComponent>("PCG");
+	Boundaries = CreateDefaultSubobject<UPanelBuildingBounds>("Boundaries");
 }
 
 void APanelBuildingActor::OnConstruction(const FTransform& Transform)

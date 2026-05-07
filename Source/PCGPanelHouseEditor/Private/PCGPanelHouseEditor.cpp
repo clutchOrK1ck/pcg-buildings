@@ -1,5 +1,9 @@
-﻿#include "MessageLogModule.h"
-#include "PCGPanelHouseEditor.h"
+﻿#include "PCGPanelHouseEditor.h"
+#include "MessageLogModule.h"
+#include "PanelBuildingBounds.h"
+#include "UnrealEdGlobals.h"
+#include "Editor/UnrealEdEngine.h"
+#include "FPanelBuildingBoundsVisualizer.h"
 
 #define LOCTEXT_NAMESPACE "FPCGPanelHouseEditorModule"
 
@@ -29,6 +33,26 @@ void FPCGPanelHouseEditorModule::UnregisterMessageLogCategory()
 	}
 }
 
+void FPCGPanelHouseEditorModule::RegisterComponentVisualizers()
+{
+	// panel building bounds component
+	if (GUnrealEd != nullptr)
+	{
+		GUnrealEd->RegisterComponentVisualizer(
+			UPanelBuildingBounds::StaticClass()->GetFName(),
+			MakeShareable(new FPanelBuildingBoundsVisualizer)
+		);
+	}
+}
+
+void FPCGPanelHouseEditorModule::UnregisterComponentVisualizers()
+{
+	if (GUnrealEd != nullptr)
+	{
+		GUnrealEd->UnregisterComponentVisualizer(UPanelBuildingBounds::StaticClass()->GetFName());
+	}
+}
+
 void FPCGPanelHouseEditorModule::StartupModule()
 {
 	IAssetTools& AssetTools = FAssetToolsModule::GetModule().Get();
@@ -41,6 +65,7 @@ void FPCGPanelHouseEditorModule::StartupModule()
 	AssetTools.RegisterAssetTypeActions(PBPanelLayoutAssetActions.ToSharedRef());
 
 	RegisterMessageLogCategory();
+	RegisterComponentVisualizers();
 }
 
 void FPCGPanelHouseEditorModule::ShutdownModule()
@@ -49,6 +74,7 @@ void FPCGPanelHouseEditorModule::ShutdownModule()
 	FAssetToolsModule::GetModule().Get().UnregisterAssetTypeActions(PBPanelLayoutAssetActions.ToSharedRef());
 
 	UnregisterMessageLogCategory();
+	UnregisterComponentVisualizers();
 }
 
 #undef LOCTEXT_NAMESPACE
