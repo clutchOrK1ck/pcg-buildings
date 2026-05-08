@@ -21,17 +21,14 @@ APanelBuildingActor::APanelBuildingActor()
 void APanelBuildingActor::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
-
-	FString ValidationError;
-	if (!Grammar.IsEmpty() && IsValidPanelBuildingConfig(ValidationError))
+	
+	if (!Grammar.IsEmpty() && PCG->GetGraph() != nullptr)
 	{
-		if (PCG->GetGraph() != nullptr)
+		FString ValidationError;
+		if (IsValidPanelBuildingConfig(ValidationError))
 		{
 			PCG->GenerateLocal(true);
 		}
-	} else
-	{
-		UE_LOG(LogTemp, Error, TEXT("PCG Panel building will not be generated because if an invalid config: %s"), *ValidationError);
 	}
 }
 

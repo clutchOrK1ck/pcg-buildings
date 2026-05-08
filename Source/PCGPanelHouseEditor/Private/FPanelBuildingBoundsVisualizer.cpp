@@ -47,16 +47,6 @@ bool FPanelBuildingBoundsVisualizer::GetWidgetLocation(const FEditorViewportClie
 	return false;
 }
 
-void FPanelBuildingBoundsVisualizer::TrackingStarted(FEditorViewportClient* InViewportClient)
-{
-	FComponentVisualizer::TrackingStarted(InViewportClient);
-}
-
-void FPanelBuildingBoundsVisualizer::TrackingStopped(FEditorViewportClient* InViewportClient, bool bInDidMove)
-{
-	FComponentVisualizer::TrackingStopped(InViewportClient, bInDidMove);
-}
-
 UActorComponent* FPanelBuildingBoundsVisualizer::GetEditedComponent() const
 {
 	return this->State.EditedComponent;

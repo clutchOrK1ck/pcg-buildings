@@ -44,8 +44,6 @@ class FPanelBuildingBoundsVisualizer : public FComponentVisualizer
 	
 public:
 	virtual bool GetWidgetLocation(const FEditorViewportClient* ViewportClient, FVector& OutLocation) const override;
-	virtual void TrackingStarted(FEditorViewportClient* InViewportClient) override;
-	virtual void TrackingStopped(FEditorViewportClient* InViewportClient, bool bInDidMove) override;
 	virtual UActorComponent* GetEditedComponent() const override;
 	virtual bool
 	GetCustomInputCoordinateSystem(const FEditorViewportClient* ViewportClient, FMatrix& OutMatrix) const override;

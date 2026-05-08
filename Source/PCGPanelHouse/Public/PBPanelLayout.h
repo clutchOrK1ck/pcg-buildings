@@ -17,33 +17,33 @@ class PCGPANELHOUSE_API UPBPanelLayout : public UObject
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, Category="Meta")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Meta")
 	FString Id;
 	
 	// panel height in cm
-	UPROPERTY(EditAnywhere, Category="Spatial")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Spatial")
 	float Width;
 
 	// panel width in cm
-	UPROPERTY(EditAnywhere, Category="Spatial")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Spatial")
 	float Height;
 
-	UPROPERTY(EditAnywhere, Category="Spatial|Window")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Spatial|Window")
 	bool HasWindow;
 
 	// window width in cm
-	UPROPERTY(EditAnywhere, DisplayName="Width", Category="Spatial|Window")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, DisplayName="Width", Category="Spatial|Window")
 	float WindowWidth;
 
 	// window height in cm
-	UPROPERTY(EditAnywhere, DisplayName="Height", Category="Spatial|Window")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, DisplayName="Height", Category="Spatial|Window")
 	float WindowHeight;
 
 	/** window's position is its location as percentage of panels' width and height
 	 *
 	 * for example, (0.5, 0.5) would mean in the center of the panel
 	 */
-	UPROPERTY(EditAnywhere, DisplayName="Position", Category="Spatial|Window")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, DisplayName="Position", Category="Spatial|Window")
 	FVector2f WindowPosition;
 
 #if WITH_EDITOR
