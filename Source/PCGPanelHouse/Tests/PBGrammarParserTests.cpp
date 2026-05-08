@@ -305,7 +305,7 @@ void PositionedPanelsToString(const TArray<FPositionedPanelInfo>& PositionedPane
 			CurrentSide = PositionedPanel.Position;
 		}
 
-		Parts.Add(PositionedPanel.PanelLayout->Id + "@" + PositionedPanel.AssignedLocation.ToString());
+		Parts.Add(PositionedPanel.PanelLayout->Id + "@" + PositionedPanel.AssignedTransform.GetLocation().ToString());
 	}
 
 	OutString = FString::Join(Parts, TEXT("\n"));

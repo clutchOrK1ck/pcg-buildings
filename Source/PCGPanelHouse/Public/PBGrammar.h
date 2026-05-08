@@ -39,7 +39,7 @@ struct FPBRule
 };
 
 UENUM(BlueprintType)
-enum EPanelBuildingSide
+enum EPanelBuildingSide : uint8
 {
 	Front = 0,
 	Right,
@@ -158,9 +158,11 @@ struct FPositionedPanelInfo
 	 * assigned panel location and rotation
 	 *
 	 * the first panel will be positioned in front and on the left of the bounding box
+	 *
+	 * panels will be rotated depending on the side of the building they are on
 	 */
 	UPROPERTY(BlueprintReadOnly)
-	FVector AssignedLocation {FVector::ZeroVector};
+	FTransform AssignedTransform;
 	
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<UPBPanelLayout> PanelLayout {nullptr}; // a reference to the panel layout for this panel

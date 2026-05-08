@@ -432,13 +432,23 @@ void PositionPanelAndShiftLocation(UPBPanelLayout* Layout,
                                    EPanelBuildingSide BuildingSide,
                                    TArray<FPositionedPanelInfo>& OutPositions)
 {
+	auto PanelLocation = LastPositionedPanelCornerLocation
+			+ GetShiftDirection(BuildingSide) * Layout->Width / 2.
+			+ FVector::UpVector * Layout->Height / 2.;
+
+	auto PanelRotation = FRotator{
+		0.,
+		static_cast<uint8>(BuildingSide) * 90.,
+		0.
+	};
+
+	auto PanelTransform = FTransform{PanelRotation, PanelLocation};
+	
 	OutPositions.Add(
 		FPositionedPanelInfo{
 			0,
 			BuildingSide,
-			LastPositionedPanelCornerLocation
-			+ GetShiftDirection(BuildingSide) * Layout->Width / 2.
-			+ FVector::UpVector * Layout->Height / 2.,
+			PanelTransform,
 			Layout
 		}
 	);
