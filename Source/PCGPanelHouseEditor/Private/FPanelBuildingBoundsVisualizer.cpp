@@ -72,16 +72,20 @@ bool FPanelBuildingBoundsVisualizer::HandleInputDelta(FEditorViewportClient* Vie
 
 	auto BoundsComponent = Cast<UPanelBuildingBounds>(GetEditedComponent());
 
+	// find local delta transalte (we are supplied with a delta translate in world space)
+	auto LocalTranslate = BoundsComponent->GetOwner()->GetActorRotation().GetInverse().RotateVector(DeltaTranslate);
+	UE_LOG(LogTemp, Display, TEXT("Handling translate delta: %s"), *LocalTranslate.ToString());
+	
 	switch(State.ActiveControl)
 	{
 	case Width:
-		BoundsComponent->Width += DeltaTranslate.Y;
+		BoundsComponent->Width += LocalTranslate.Y;
 		return true;
 	case Depth:
-		BoundsComponent->Depth -= DeltaTranslate.X;
+		BoundsComponent->Depth -= LocalTranslate.X;
 		return true;
 	default:
-		BoundsComponent->Height += DeltaTranslate.Z;
+		BoundsComponent->Height += LocalTranslate.Z;
 		return true;
 	}
 }
