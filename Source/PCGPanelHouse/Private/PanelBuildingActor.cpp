@@ -5,6 +5,7 @@
 #include "Framework/Notifications/NotificationManager.h"
 #include "Widgets/Notifications/SNotificationList.h"
 #include "PBGrammar.h"
+#include "PCGGraph.h"
 #include "Algo/AnyOf.h"
 
 
@@ -27,6 +28,12 @@ void APanelBuildingActor::OnConstruction(const FTransform& Transform)
 		FString ValidationError;
 		if (IsValidPanelBuildingConfig(ValidationError))
 		{
+			if (auto GraphInstance = PCG->GetGraphInstance(); GraphInstance)
+			{
+				GraphInstance->ParametersOverrides.Parameters.SetValueFloat(GRAPH_PARAM_NAME_MAX_HEIGHT, Boundaries->Height);
+				GraphInstance->ParametersOverrides.Parameters.SetValueFloat(GRAPH_PARAM_NAME_FLOOR_HEIGHT, PanelConfig[0]->Height);
+			}
+			
 			PCG->GenerateLocal(true);
 		}
 	}

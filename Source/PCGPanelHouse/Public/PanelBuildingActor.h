@@ -9,6 +9,9 @@
 #include "GameFramework/Actor.h"
 #include "PanelBuildingActor.generated.h"
 
+const FName GRAPH_PARAM_NAME_MAX_HEIGHT = FName("MaximumHeight");
+const FName GRAPH_PARAM_NAME_FLOOR_HEIGHT = FName("FloorHeight");
+
 UCLASS()
 class PCGPANELHOUSE_API APanelBuildingActor : public AActor
 {
