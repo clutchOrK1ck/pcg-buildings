@@ -46,6 +46,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, DisplayName="Position", Category="Spatial|Window")
 	FVector2f WindowPosition;
 
+	/**
+	 * 
+	 * @return offset at which the window's center lies relative to the panel's center
+	 */
+	UFUNCTION(BlueprintPure)
+	FVector GetWindowOffset() const;
+
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
