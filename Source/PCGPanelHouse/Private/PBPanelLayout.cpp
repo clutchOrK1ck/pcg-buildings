@@ -12,11 +12,11 @@ FVector UPBPanelLayout::GetWindowOffset() const
 	}
 
 	// assume the panel's center is at (0;0)
-	auto PanelTopLeft = FVector2f(-Width/2., Height/2.);
-	auto WindowTopLeftOffset = FVector2f(WindowPosition.X, -WindowPosition.Y);
-	auto WindowCenterOffset = FVector2f(WindowWidth/2., -WindowHeight/2.);
+	auto PanelTopRight = FVector2f(Width/2., Height/2.);
+	auto WindowTopRightOffset = FVector2f(-WindowPosition.X, -WindowPosition.Y);
+	auto WindowCenterOffset = FVector2f(-WindowWidth/2., -WindowHeight/2.);
 
-	auto Offset = PanelTopLeft + WindowTopLeftOffset + WindowCenterOffset;
+	auto Offset = PanelTopRight + WindowTopRightOffset + WindowCenterOffset;
 
 	return FVector{
 		0.,
