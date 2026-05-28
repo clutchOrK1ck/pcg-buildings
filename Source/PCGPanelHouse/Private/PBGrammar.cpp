@@ -255,6 +255,24 @@ const TSet<int>& FPBRuleSet::GetIndices() const
 	return Indices;
 }
 
+const FPanelOverrideRule* FPBRuleSet::FindOverride(const int FloorIndex, const int PanelIndex) const
+{
+	auto FloorOverride = FloorOverrides.FindByPredicate([&FloorIndex](const FPanelFloorOverrides& FloorOverride)
+	{
+		return FloorOverride.FloorIndex == FloorIndex;
+	});
+
+	if (!FloorOverride)
+	{
+		return nullptr;
+	}
+
+	return FloorOverride->Overrides.FindByPredicate([&PanelIndex](const FPanelOverrideRule& OverrideRule)
+	{
+		return OverrideRule.OverridenPanelIndex == PanelIndex;
+	});
+}
+
 FString FParsingException::GetErrorMessage() const
 {
 	return ErrorMessage;
@@ -871,13 +889,32 @@ bool UPCGPanelBuildingHelpers::FitPanelsToBoundingBox(const FPBRuleSet& PanelHou
 	return true;
 }
 
+void ApplyOverrides(TArray<FPositionedPanelInfo>& Panels, const FPBRuleSet& RuleSet, const TArray<UPBPanelLayout*>& PanelLayouts)
+{
+	for (FPositionedPanelInfo& PositionedPanel : Panels)
+	{
+		auto PanelIdx = PanelLayouts.Find(PositionedPanel.PanelLayout);
+
+		if (PanelIdx == INDEX_NONE)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Cannot locate index of the panel for override"));
+			continue;
+		}
+		
+		if (auto Override = RuleSet.FindOverride(PositionedPanel.FloorOffset, PanelIdx); Override && PanelLayouts.IsValidIndex(Override->TargetPanelIndex))
+		{
+			PositionedPanel.PanelLayout = PanelLayouts[Override->TargetPanelIndex];
+		}
+	}
+}
+
 bool UPCGPanelBuildingHelpers::FitPanelsToBoundingBox2(const FPBRuleSet& PanelHouseRuleSet,
-	const FBox& TargetDimensions, 
-	const float BottomOffset, 
-	const float TopOffset, 
-	FBox& GeneratedDimensions,
-	const TArray<UPBPanelLayout*>& Panels, 
-	TArray<FPositionedPanelInfo>& OutPanels)
+                                                       const FBox& TargetDimensions, 
+                                                       const float BottomOffset, 
+                                                       const float TopOffset, 
+                                                       FBox& GeneratedDimensions,
+                                                       const TArray<UPBPanelLayout*>& Panels, 
+                                                       TArray<FPositionedPanelInfo>& OutPanels)
 {
 	if (PanelHouseRuleSet.Rules.IsEmpty())
 	{
@@ -960,6 +997,9 @@ bool UPCGPanelBuildingHelpers::FitPanelsToBoundingBox2(const FPBRuleSet& PanelHo
 		OutPanels.Append(CurrentFloor);
 	}
 
+	// apply floor-overrides
+	ApplyOverrides(OutPanels, PanelHouseRuleSet, Panels);
+	
 	// write the dimensions of the generated building to the out bounding box
 	GeneratedDimensions.Min = FVector{0., -RightDepth, 0.};
 	GeneratedDimensions.Max = FVector{FrontalWidth, 0., BottomOffset + NumFloors * FloorHeight + TopOffset};

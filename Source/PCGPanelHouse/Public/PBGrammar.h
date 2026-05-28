@@ -97,6 +97,7 @@ public:
 	void UpdateReferencedIndices();
 	
 	const TSet<int>& GetIndices() const;
+	const FPanelOverrideRule* FindOverride(const int FloorIndex, const int PanelIndex) const;
 };
 
 /**
