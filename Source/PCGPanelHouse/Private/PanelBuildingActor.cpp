@@ -22,18 +22,32 @@ APanelBuildingActor::APanelBuildingActor()
 void APanelBuildingActor::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
+
+	FString ValidationError;
+	FPBRuleSet RuleSet;
 	
-	if (!Grammar.IsEmpty() && PCG->GetGraph() != nullptr)
+	if (!Grammar.IsEmpty())
 	{
-		FString ValidationError;
-		if (IsValidPanelBuildingConfig(ValidationError))
+		if (IsValidPanelBuildingConfig(ValidationError, RuleSet))
 		{
-			if (auto GraphInstance = PCG->GetGraphInstance(); GraphInstance)
-			{
-				GraphInstance->ParametersOverrides.Parameters.SetValueFloat(GRAPH_PARAM_NAME_MAX_HEIGHT, Boundaries->Height);
-				GraphInstance->ParametersOverrides.Parameters.SetValueFloat(GRAPH_PARAM_NAME_FLOOR_HEIGHT, PanelConfig[0]->Height);
-			}
+			FBox GeneratedDimensions;
+			TArray<FPositionedPanelInfo> PositionedPanels;
 			
+			UPCGPanelBuildingHelpers::FitPanelsToBoundingBox2(
+				RuleSet,
+				Boundaries->GetBounds(),
+				BasementHeight,
+				RoofHeight,
+				GeneratedDimensions,
+				PanelConfig,
+				PositionedPanels);
+
+			FloorHeight = PanelConfig[0]->Height;
+			BuildingHeight = GeneratedDimensions.GetExtent().Z * 2.;
+		}
+
+		if (PCG->GetGraph() != nullptr)
+		{
 			PCG->GenerateLocal(true);
 		}
 	}
@@ -42,8 +56,9 @@ void APanelBuildingActor::OnConstruction(const FTransform& Transform)
 void APanelBuildingActor::Validate()
 {
 	FString ValidationError;
+	FPBRuleSet RuleSet;
 	
-	if (const bool ValidConfig = IsValidPanelBuildingConfig(ValidationError); ValidConfig)
+	if (const bool ValidConfig = IsValidPanelBuildingConfig(ValidationError, RuleSet); ValidConfig)
 	{
 		FNotificationInfo SuccessNotification{INVTEXT("Successfully validated")};
 
@@ -68,12 +83,11 @@ void APanelBuildingActor::BeginPlay()
 	
 }
 
-bool APanelBuildingActor::IsValidPanelBuildingConfig(FString& OutErrorMessage) const
+bool APanelBuildingActor::IsValidPanelBuildingConfig(FString& OutErrorMessage, FPBRuleSet& RuleSet) const
 {
 	// catch invalid grammars first
 	if (!Grammar.IsEmpty())
 	{
-		FPBRuleSet RuleSet;
 		FParsingError ParsingError;
 		
 		ParsePBGrammar(this->Grammar, RuleSet, ParsingError);

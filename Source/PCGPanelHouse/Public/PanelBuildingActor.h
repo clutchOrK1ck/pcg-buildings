@@ -23,6 +23,18 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Panel Buildings")
 	TArray<UPBPanelLayout*> PanelConfig;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Panel Buildings")
+	float BasementHeight;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Panel Buildings")
+	float RoofHeight;
+	
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Panel Buildings")
+	float FloorHeight;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Panel Buildings")
+	float BuildingHeight;
 	
 	// Sets default values for this actor's properties
 	APanelBuildingActor();
@@ -44,7 +56,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	UFUNCTION(BlueprintCallable, Category="Panel Buildings")
-	bool IsValidPanelBuildingConfig(FString& OutErrorMessage) const;
+	bool IsValidPanelBuildingConfig(FString& OutErrorMessage, FPBRuleSet& OutRuleSet) const;
 
 public:
 	// Called every frame
