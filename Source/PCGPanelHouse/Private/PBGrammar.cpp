@@ -3,12 +3,16 @@
 #include "PBGrammar.h"
 #include "Algo/Accumulate.h"
 #include "Algo/AnyOf.h"
+#include "Algo/Count.h"
 #include "Algo/MaxElement.h"
 
 constexpr TCHAR GDelimiter = ' ';
 constexpr TCHAR GGroupOpeningChar = '{';
 constexpr TCHAR GGroupClosingChar = '}';
 constexpr TCHAR GRulesetSeparatorChar = '|';
+constexpr TCHAR GFloorOverrideOpeningChar = '[';
+constexpr TCHAR GFloorOverrideClosingChar = ']';
+constexpr TCHAR GFloorOverrideRemapChar = '>';
 
 const int FPBRuleSet::CompletionRules[][4] = {
 	{-1, -1, -1, -1}, // 0 rules - impossible case
@@ -17,6 +21,25 @@ const int FPBRuleSet::CompletionRules[][4] = {
 	{0, 1, 2, 1}, // 3 rules (front, right, back) => front, right, back, right
 	{0, 1, 2, 3} // 4 rules (front, right, back, left) => front, right, back, left
 };
+
+/**
+ * unsafe function for parsing integers, call only at valid position and a digit-char
+ *
+ * leaves the cursor at the last-read digit
+ */
+int ParseInt(const FString& Grammar, int& CursorIn)
+{
+	FString DigitText;
+
+	while (CursorIn < Grammar.Len() && FChar::IsDigit(Grammar[CursorIn]))
+	{
+		DigitText.AppendChar(Grammar[CursorIn++]);
+	}
+
+	CursorIn--;
+
+	return FCString::Atoi(*DigitText);
+}
 
 /**
  * parses the next panel group (enclosed in '{', '}')
@@ -31,7 +54,6 @@ const int FPBRuleSet::CompletionRules[][4] = {
  */
 bool ParsePBGroup(const FString& Grammar, int& CursorIn, FPanelGroup& OutPanelGroup, FParsingError& OutError)
 {
-	FString DigitAccumulator;
 	const int GroupStartingPosition = CursorIn - 1;
 	bool HasReachedGroupClosingChar{false};
 
@@ -47,13 +69,7 @@ bool ParsePBGroup(const FString& Grammar, int& CursorIn, FPanelGroup& OutPanelGr
 
 		if (FChar::IsDigit(Character))
 		{
-			DigitAccumulator.AppendChar(Character);
-
-			if (Cursor + 1 >= Grammar.Len() || !FChar::IsDigit(Grammar[Cursor + 1]))
-			{
-				OutPanelGroup.PanelIndices.Add(FCString::Atoi(*DigitAccumulator));
-				DigitAccumulator.Empty();
-			}
+			OutPanelGroup.PanelIndices.Add(ParseInt(Grammar, Cursor));
 		}
 		else if (Character == GDelimiter)
 		{
@@ -127,7 +143,6 @@ bool ParsePBGroup(const FString& Grammar, int& CursorIn, FPanelGroup& OutPanelGr
  */
 bool ParsePBRule(const FString& Grammar, int& CursorIn, FPBRule& OutRule, FParsingError& OutError)
 {
-	FString DigitAccumulator;
 	// rule starts at 0 if this is the first rule, or at its opening pipe
 	int RuleStartingPosition = CursorIn == 0 ? CursorIn : CursorIn - 1;
 	bool HasGroup{false};
@@ -144,14 +159,7 @@ bool ParsePBRule(const FString& Grammar, int& CursorIn, FPBRule& OutRule, FParsi
 
 		if (FChar::IsDigit(Character))
 		{
-			DigitAccumulator.AppendChar(Character);
-
-			// look up the next char and flush digits accumulator if needed
-			if (Cursor + 1 >= Grammar.Len() || !FChar::IsDigit(Grammar[Cursor + 1]))
-			{
-				OutRule.Items.Add(FPBRuleItem{TInPlaceType<int>(), FCString::Atoi(*DigitAccumulator)});
-				DigitAccumulator.Empty();
-			}
+			OutRule.Items.Add(FPBRuleItem{TInPlaceType<int>(), ParseInt(Grammar, Cursor)});
 		}
 		else if (Character == GDelimiter)
 		{
@@ -208,6 +216,16 @@ bool ParsePBRule(const FString& Grammar, int& CursorIn, FPBRule& OutRule, FParsi
 	return true;
 }
 
+void FPBRule::AddPanelIndex(int ReadInt)
+{
+	Items.Add(FPBRuleItem(TInPlaceType<int>(), ReadInt));
+}
+
+void FPBRule::AddPanelGroup(const FPanelGroup& PanelGroup)
+{
+	Items.Add(FPBRuleItem(TInPlaceType<FPanelGroup>(), PanelGroup));
+}
+
 const FPBRule& FPBRuleSet::GetPBRule(const EPanelBuildingSide Side) const
 {
 	return this->Rules[
@@ -237,6 +255,321 @@ const TSet<int>& FPBRuleSet::GetIndices() const
 	return Indices;
 }
 
+FString FParsingException::GetErrorMessage() const
+{
+	return ErrorMessage;
+}
+
+uint32 FParsingException::GetPosition() const
+{
+	return Position;
+}
+
+TCHAR FUnexpectedSymbolException::GetSymbol() const
+{
+	return Symbol;
+}
+
+FString FUnexpectedSymbolException::GetErrorMessage() const
+{
+	return FParsingException::GetErrorMessage() + " '" + Symbol + "'";
+}
+
+template <typename U, typename S, typename E>
+auto FBuildingGrammarParser::Read(U AccumulateCondition, S ResultTransform, E ExceptionFactory, bool SkipBlanks, int MaxLen)
+{
+	FString Accumulator;
+	int Cursor_;
+
+	for (Cursor_ = Cursor; Cursor_ < Grammar.Len(); Cursor_++)
+	{
+		const auto Char = Grammar[Cursor_];
+
+		const bool bUnexpectedChar = !AccumulateCondition(Char);
+		
+		if (bUnexpectedChar)
+		{
+			if (!Accumulator.IsEmpty())
+			{
+				break;
+			}
+
+			if (FChar::IsWhitespace(Char) && SkipBlanks)
+			{
+				continue;
+			}
+
+			auto Exception = ExceptionFactory(Char, Cursor_);
+			throw Exception;
+		}
+		
+		Accumulator += Char;
+
+		if (MaxLen > 0 && Accumulator.Len() >= MaxLen)
+		{
+			Cursor_++;
+			break;
+		} 
+	}
+
+	if (Accumulator.IsEmpty())
+	{
+		throw FEOL();
+	}
+	
+	Cursor = Cursor_;
+	return ResultTransform(Accumulator);
+}
+
+int FBuildingGrammarParser::ReadInt(bool bSkipBlanks)
+{
+	return Read(
+		FChar::IsDigit,
+		[](const FString& Accumulator)
+		{
+			return FCString::Atoi(*Accumulator);
+		},
+		[](const TCHAR& Char, const int Cursor)
+		{
+			return FParsingException("Expected integer", Cursor);
+		},
+		bSkipBlanks, -1);
+}
+
+FString FBuildingGrammarParser::ReadIdentifier(bool bSkipBlanks)
+{
+	return Read(
+		FChar::IsIdentifier,
+		[](const FString& Accumulator)
+		{
+			return Accumulator;
+		},
+		[](const TCHAR& Char, const int Cursor)
+		{
+			return FParsingException("Expected identifier", Cursor);
+		},
+		bSkipBlanks, -1);
+}
+
+TCHAR FBuildingGrammarParser::ReadRequiredChar(const TCHAR& Char, bool bSkipBlanks)
+{
+	return Read(
+		[&Char](const TCHAR& TestChar)
+		{
+			return TestChar == Char;
+		},
+		[](const FString& Accumulator)
+		{
+			return Accumulator[0];
+		},
+		[&Char](const TCHAR& Char_, const int Cursor)
+		{
+			FString ErrorMessage = FString::Printf(TEXT("Expected '%c', received '%c'"), Char, Char_);
+			return FParsingException(ErrorMessage, Cursor);
+		},
+		bSkipBlanks, 1
+		);
+}
+
+TCHAR FBuildingGrammarParser::Peak(bool SkipBlanks) const
+{
+	for (int Cursor_ = Cursor; Cursor_ < Grammar.Len(); Cursor_++)
+	{
+		const auto Char = Grammar[Cursor_];
+		
+		if (FChar::IsWhitespace(Char) && SkipBlanks)
+		{
+			continue;
+		}
+
+		return Char;
+	}
+
+	return '\0';
+}
+
+TCHAR FBuildingGrammarParser::ReadChar(bool SkipBlanks)
+{
+	return Read(
+		[](const TCHAR& Char)
+		{
+			return true;
+		},
+		[](const FString& Accumulator)
+		{
+			return Accumulator[0];
+		},
+		[](const TCHAR& Char, const int Cursor)
+		{
+			return FParsingException("", -1);
+		},
+		SkipBlanks, 1);
+}
+
+FPanelGroup FBuildingGrammarParser::ReadPanelGroup()
+{
+	FPanelGroup Result;
+	
+	ReadRequiredChar('{');
+
+	// read panel indices
+	while (Peak() != '}')
+	{
+		Result.PanelIndices.Add(ReadInt());
+	}
+
+	ReadRequiredChar('}');
+
+	TCHAR GroupRepeatSpecifier = Peak();
+	
+	if (!GroupRepeatSpecifier || (GroupRepeatSpecifier != '*' && GroupRepeatSpecifier != '+'))
+	{
+		throw FParsingException("Expected '*' or '+' panel group specifier", Cursor);
+	}
+
+	Result.AtLeastOneOccurrence = GroupRepeatSpecifier == '+';
+	ReadChar();
+
+	return Result;
+}
+
+FPBRule FBuildingGrammarParser::ReadRule()
+{
+	FPBRule Result;
+	auto Next = Peak();
+	
+	while (Next && Next != '|' && Next != '[')
+	{
+		if (FChar::IsDigit(Next))
+		{
+			Result.AddPanelIndex(ReadInt());
+		} else if (Next == '{')
+		{
+			const auto Position = Cursor;
+			auto PanelGroup = ReadPanelGroup();
+
+			if (PanelGroup.PanelIndices.IsEmpty())
+			{
+				throw FParsingException("Empty panel groups are not allowed", Position);
+			}
+			
+			Result.AddPanelGroup(PanelGroup);
+		} else
+		{
+			throw FUnexpectedSymbolException(ReadChar(), Cursor-1);
+		}
+
+		Next = Peak();
+	}
+
+	return Result;
+}
+
+void FBuildingGrammarParser::ReadRules()
+{
+	auto Next = Peak();
+	
+	while (Next && Next != '[')
+	{
+		auto CurrentPosition = Cursor;
+		FPBRule Rule = ReadRule();
+
+		if (Rule.Items.IsEmpty())
+		{
+			throw FParsingException("Empty rules are not allowed", CurrentPosition);
+		}
+
+		if (Rule.Items.Num() == 1
+			&& Rule.Items[0].IsType<FPanelGroup>()
+			&& !Rule.Items[0].Get<FPanelGroup>().AtLeastOneOccurrence)
+		{
+			throw FParsingException("Rules consisting of a single optional group are not allowed", CurrentPosition);
+		}
+
+		if (Algo::CountIf(Rule.Items, [](const FPBRuleItem& Item)
+		{
+			return Item.IsType<FPanelGroup>();
+		}) > 1)
+		{
+			throw FParsingException("Rules with multiple panel groups are not allowed", CurrentPosition);
+		}
+		
+		RuleSet.Rules.Add(Rule);
+
+		// consume the group separator if any
+		if (Peak() == '|')
+		{
+			ReadRequiredChar('|');
+		}
+
+		Next = Peak();
+	}
+}
+
+FPanelOverrideRule FBuildingGrammarParser::ReadOverrideRule()
+{
+	FPanelOverrideRule Result;
+
+	Result.OverridenPanelIndex = ReadInt();
+	ReadRequiredChar('>');
+	Result.TargetPanelIndex = ReadInt();
+
+	return Result;
+}
+
+FPanelFloorOverrides FBuildingGrammarParser::ReadFloorOverrideGroup()
+{
+	FPanelFloorOverrides Result;
+	
+	ReadRequiredChar('[');
+	Result.FloorIndex = ReadInt();
+	ReadRequiredChar(':');
+
+	while (Peak() != ']')
+	{
+		Result.Overrides.Add(ReadOverrideRule());
+	}
+	ReadChar();
+	
+	return Result;
+}
+
+void FBuildingGrammarParser::ReadFloorOverrides()
+{
+	while (Peak() == '[')
+	{
+		RuleSet.FloorOverrides.Add(ReadFloorOverrideGroup());
+	}
+}
+
+void FBuildingGrammarParser::Parse()
+{
+	try
+	{
+		ReadRules();
+
+		if (RuleSet.Rules.IsEmpty())
+		{
+			throw FParsingException("Grammars must contain at least one rule", 0);
+		}
+
+		if (RuleSet.Rules.Num() > 4)
+		{
+			throw FParsingException("Grammars can contain at most 4 rules", 0);
+		}
+		
+		ReadFloorOverrides();
+
+		if (Peak())
+		{
+			throw FUnexpectedSymbolException(ReadChar(), Cursor - 1);
+		}
+	} catch (const FParsingException& Exception)
+	{
+		Error = Exception;
+	}
+}
+
 FString ToString(const FParsingError& ParsingError, const FString& Grammar)
 {
 	FString ErrorMsg;
@@ -256,43 +589,11 @@ FString ToString(const FParsingError& ParsingError, const FString& Grammar)
 
 bool ParsePBGrammar(const FString& Grammar, FPBRuleSet& OutRuleSet, FParsingError& OutError)
 {
-	if (Grammar.TrimStartAndEnd().IsEmpty())
-	{
-		OutError.ErrorAtPosition("Cannot parse an empty grammar", -1);
-		return false;
-	}
-
-	int Cursor{0};
-	int NumberOfRules{0}; // number of rules parsed
-
-	while (Cursor < Grammar.Len())
-	{
-		// cursor at the ruleset separator after reading the previous rule
-		if (Cursor > 0 && Grammar[Cursor] == GRulesetSeparatorChar)
-		{
-			if (NumberOfRules >= 4)
-			{
-				OutError.ErrorAtPosition("Rules cannot exceed 4", Cursor);
-				return false;
-			}
-
-			Cursor++;
-		}
-
-		FPBRule Rule;
-		FParsingError RuleParsingError;
-
-		if (!ParsePBRule(Grammar, Cursor, Rule, RuleParsingError))
-		{
-			OutError = RuleParsingError;
-			return false;
-		}
-
-		OutRuleSet.Rules.Add(Rule);
-		NumberOfRules++;
-	}
-
-	OutRuleSet.UpdateReferencedIndices();
+	auto Parser = FBuildingGrammarParser(Grammar);
+	Parser.Parse();
+	
+	Parser.GetRuleSet().UpdateReferencedIndices();
+	OutRuleSet = Parser.GetRuleSet();
 	return true;
 }
 
@@ -570,8 +871,104 @@ bool UPCGPanelBuildingHelpers::FitPanelsToBoundingBox(const FPBRuleSet& PanelHou
 	return true;
 }
 
+bool UPCGPanelBuildingHelpers::FitPanelsToBoundingBox2(const FPBRuleSet& PanelHouseRuleSet,
+	const FBox& TargetDimensions, 
+	const float BottomOffset, 
+	const float TopOffset, 
+	FBox& GeneratedDimensions,
+	const TArray<UPBPanelLayout*>& Panels, 
+	TArray<FPositionedPanelInfo>& OutPanels)
+{
+	if (PanelHouseRuleSet.Rules.IsEmpty())
+	{
+		return false;
+	}
+	
+	if (!(CheckValidPanelDefinitions(Panels) && CheckRulesetReferencesValidIndex(PanelHouseRuleSet, Panels.Num())))
+	{
+		return false;
+	}
+
+	TArray<FPositionedPanelInfo> GroundFloor;
+	
+	TArray<FPanelPlacement> FrontalPlacements;
+	TArray<FPanelPlacement> RightPlacements;
+	TArray<FPanelPlacement> BackPlacements;
+	TArray<FPanelPlacement> LeftPlacements;
+
+	const float FrontalWidth = GeneratePlacements(
+		PanelHouseRuleSet.GetPBRule(Front),
+		Panels,
+		TargetDimensions.GetSize().Y,
+		FrontalPlacements);
+
+	const float RightDepth = GeneratePlacements(
+		PanelHouseRuleSet.GetPBRule(Right),
+		Panels,
+		TargetDimensions.GetSize().X,
+		RightPlacements);
+
+	GeneratePlacements(
+		PanelHouseRuleSet.GetPBRule(Back),
+		Panels,
+		FrontalWidth,
+		BackPlacements);
+
+	GeneratePlacements(
+		PanelHouseRuleSet.GetPBRule(Left),
+		Panels,
+		RightDepth,
+		LeftPlacements);
+
+	// create the actual locations
+	FVector LastPositionedPanelCornerLocation{
+		TargetDimensions.Max.X,
+		TargetDimensions.Min.Y,
+		TargetDimensions.Min.Z // start in front, on the left, and at the bottom
+	};
+
+	// 0th floor, other floors can inherit from this base
+	PositionPanels(FrontalPlacements, Front, LastPositionedPanelCornerLocation, GroundFloor);
+	PositionPanels(RightPlacements, Right, LastPositionedPanelCornerLocation, GroundFloor);
+	PositionPanels(BackPlacements, Back, LastPositionedPanelCornerLocation, GroundFloor);
+	PositionPanels(LeftPlacements, Left, LastPositionedPanelCornerLocation, GroundFloor);
+
+	// positioned panels can now be simply copied over to other floors with a Z-offset
+	auto AvailableHeight = TargetDimensions.Max.Z - BottomOffset - TopOffset;
+	auto FloorHeight = Panels[0]->Height;
+	auto NumFloors = FMath::FloorToInt32(AvailableHeight / FloorHeight);
+
+	for (auto Floor = 0; Floor < NumFloors; Floor++)
+	{
+		TArray<FPositionedPanelInfo> CurrentFloor;
+		Algo::Transform(GroundFloor, CurrentFloor, [Floor, FloorHeight, BottomOffset](const FPositionedPanelInfo& Positioning)
+		{
+			FPositionedPanelInfo FloorPositioning = Positioning;
+			FloorPositioning.FloorOffset = Floor;
+
+			auto OffsetLocation = Positioning.AssignedTransform.GetLocation();
+			OffsetLocation.Z = BottomOffset + FloorHeight * Floor + FloorHeight / 2.;
+			
+			FloorPositioning.AssignedTransform = FTransform{
+				Positioning.AssignedTransform.GetRotation(),
+				OffsetLocation
+			};
+
+			return FloorPositioning;
+		});
+		
+		OutPanels.Append(CurrentFloor);
+	}
+
+	// write the dimensions of the generated building to the out bounding box
+	GeneratedDimensions.Min = FVector{0., -RightDepth, 0.};
+	GeneratedDimensions.Max = FVector{FrontalWidth, 0., BottomOffset + NumFloors * FloorHeight + TopOffset};
+
+	return true;
+}
+
 void UPCGPanelBuildingHelpers::ParseGrammar(const FString& Grammar, FPBRuleSet& OutRuleSet, bool& Success,
-                                         FString& ErrorString)
+                                            FString& ErrorString)
 {
 	FParsingError ParsingError;
 	ParsePBGrammar(Grammar, OutRuleSet, ParsingError);

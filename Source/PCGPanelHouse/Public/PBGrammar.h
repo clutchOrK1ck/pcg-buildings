@@ -26,6 +26,21 @@ struct FPanelGroup
 
 using FPBRuleItem = TVariant<int, FPanelGroup>;
 
+struct FPanelOverrideRule
+{
+	int OverridenPanelIndex;	// override panels with this index
+	int TargetPanelIndex;		// override to a panel with this index
+};
+
+/**
+ * overrides in panel indices for a given floor
+ */
+struct FPanelFloorOverrides
+{
+	int FloorIndex;						// to which floor these overrides apply
+	TArray<FPanelOverrideRule> Overrides;
+};
+
 /**
  * describes a rule for placement of panels
  *
@@ -36,6 +51,8 @@ using FPBRuleItem = TVariant<int, FPanelGroup>;
 struct FPBRule
 {
 	TArray<FPBRuleItem> Items;
+	void AddPanelIndex(int ReadInt);
+	void AddPanelGroup(const FPanelGroup& PanelGroup);
 };
 
 UENUM(BlueprintType)
@@ -72,6 +89,7 @@ private:
 
 public:
 	TArray<FPBRule> Rules; // rules defined by the user
+	TArray<FPanelFloorOverrides> FloorOverrides; // overrides of panels per floor
 	
 	const FPBRule& GetPBRule(const EPanelBuildingSide Side) const;
 
@@ -130,6 +148,151 @@ struct FParsingError
 	}
 };
 
+class FParsingException
+{
+	FString ErrorMessage;
+	uint32 Position;
+
+public:
+	FParsingException(const FString& ErrorMessage, const uint32 InPosition) : ErrorMessage(ErrorMessage), Position(InPosition) {}
+	virtual ~FParsingException() {}
+	
+	virtual FString GetErrorMessage() const;
+	uint32 GetPosition() const;
+};
+
+class FEOL : public FParsingException
+{
+public:
+	FEOL() : FParsingException("Unexpected end of line", -1) {}
+};
+
+class FUnexpectedSymbolException : public FParsingException
+{
+	TCHAR Symbol;
+public:
+	FUnexpectedSymbolException(const TCHAR& Symbol, const uint32 InPosition) :
+		FParsingException("Unexpected symbol", InPosition),
+		Symbol(Symbol)
+	{
+	}
+	
+	TCHAR GetSymbol() const;
+	virtual FString GetErrorMessage() const override;
+};
+
+
+class FBuildingGrammarParser
+{
+	FString Grammar;
+	uint32 Cursor;
+	FPBRuleSet RuleSet;
+	FParsingException Error;
+
+	/**
+	 * accumulates characters into accumulator and returns the accumulator transformed into some value
+	 *
+	 * if accumulator is still empty when EOL is reached or a test condition returns 'false', an exception will be thrown
+	 * 
+	 * @tparam U a function taking a char and returning a bool
+	 * @tparam S a function taking a string a returning some value
+	 * @tparam E a function that accepts a char and a position and returns an exception object
+	 * @param AccumulateCondition test whether to accumulate a given char
+	 * @param ResultTransform transform the accumulator into a value
+	 * @param SkipBlanks whether to ignore preceding blanks
+	 * @param MaxLen accumulate only this many chars, then return
+	 * @return 
+	 */
+	template<typename U, typename S, typename E>
+	auto Read(U AccumulateCondition, S ResultTransform, E ExceptionFactory, bool SkipBlanks = true, int MaxLen = -1);
+	
+	/**
+	 * attempt to read an integer and throw if EOL or an unexpected symbol are encountered
+	 * @param SkipBlanks skip blanks preceding the integer
+	 * @return 
+	 */
+	int ReadInt(bool SkipBlanks = true);
+
+	/**
+	 * attempt to read an identifier (alnum and '_') and throw if EOL or an unexpected symbol are encountered
+	 * @param SkipBlanks skip blanks preceding the integer
+	 * @return 
+	 */
+	FString ReadIdentifier(bool SkipBlanks = true);
+
+	/**
+	 * reads the required character, throws if EOL or another character are encountered
+	 * @param SkipBlanks skip blanks preceding the char
+	 * @param Char the required char
+	 */
+	TCHAR ReadRequiredChar(const TCHAR& Char, bool SkipBlanks = true);
+
+	/**
+	 * peaks the next character to read, \0 if EOL
+	 * @param SkipBlanks skip preceding blanks
+	 * @return
+	 */
+	TCHAR Peak(bool SkipBlanks = true) const;
+
+	/**
+	 * read the next non-whitespace character, can throw EOL
+	 * @param SkipBlanks skip the preceding blanks
+	 * @return 
+	 */
+	TCHAR ReadChar(bool SkipBlanks = true);
+
+	/**
+	 * read a panel group '{ 1 2 3 }*'
+	 *
+	 * @throws FEOL if end of line is reached before the entire group specification has been read
+	 * @throws FUnexpectedSymbolException if the panel group contains non-numeric indeces
+	 * @throws FParsingException if '*' or '+' repeat specifiers are missing
+	 * @return 
+	 */
+	FPanelGroup ReadPanelGroup();
+	
+	/**
+	 * reads a rule for one building's side: ' 1 2 3 {1 2}+ 0 '
+	 *
+	 * @throws FEOL on unfinished groups
+	 * @throws FUnexpectedSymbolException unexpected symbols in a panel group or in the rule
+	 * @throws FParsingException if group repeat specifier is missing
+	 * @return 
+	 */
+	FPBRule ReadRule();
+
+	/**
+	 * reads the rules into the ruleset
+	 *
+	 * @throws FParsingException
+	 */
+	void ReadRules();
+
+	/**
+	 * reads an override rule '3 > 4'
+	 * @return 
+	 */
+	FPanelOverrideRule ReadOverrideRule();
+	
+	/**
+	 * 
+	 * @return 
+	 */
+	FPanelFloorOverrides ReadFloorOverrideGroup();
+	
+	/**
+	 * reads the panel floor overrides
+	 *
+	 * @throws FParsingException
+	 */
+	void ReadFloorOverrides();
+	
+public:
+	FBuildingGrammarParser(const FString& InGrammar) : Grammar(InGrammar), Cursor(0), Error("", -1) {}
+	void Parse();
+	FPBRuleSet GetRuleSet() const {return RuleSet;}
+};
+
 FString ToString(const FParsingError& ParsingError, const FString& Grammar);
 
 /**
@@ -147,7 +310,7 @@ USTRUCT(BlueprintType)
 struct FPositionedPanelInfo
 {
 	GENERATED_BODY()
-	
+
 	UPROPERTY(BlueprintReadOnly)
 	int FloorOffset {0};
 
@@ -199,6 +362,19 @@ public:
 	UFUNCTION(BlueprintCallable)
 	static bool FitPanelsToBoundingBox(const FPBRuleSet& PanelHouseRuleSet, const FBox& BoundingBox, const TArray<UPBPanelLayout*>& Panels, TArray<FPositionedPanelInfo>& OutPanels);
 
+	/**
+	 * 
+	 * same as above but also generates floors above 0
+	 */
+	UFUNCTION(BlueprintCallable)
+	static bool FitPanelsToBoundingBox2(const FPBRuleSet& PanelHouseRuleSet,
+		const FBox& TargetDimensions,
+		const float BottomOffset,
+		const float TopOffset,
+		FBox& GeneratedDimensions,
+		const TArray<UPBPanelLayout*>& Panels,
+		TArray<FPositionedPanelInfo>& OutPanels);
+	
 	UFUNCTION(BlueprintCallable)
 	static void ParseGrammar(const FString& Grammar, FPBRuleSet& OutRuleSet, bool& Success, FString& ErrorString);
 

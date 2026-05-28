@@ -126,9 +126,28 @@ FString Print(const FPBRule& Rule)
 	return FString::Join(RuleItemsAsString, TEXT(" "));
 }
 
+FString Print(const FPanelOverrideRule& OverrideRule)
+{
+	return FString::Printf(TEXT("%d>%d"), OverrideRule.OverridenPanelIndex, OverrideRule.TargetPanelIndex);
+}
+
+FString Print(const FPanelFloorOverrides& FloorOverride)
+{
+	TArray<FString> OverrideRules;
+	Algo::Transform(FloorOverride.Overrides,
+	                OverrideRules,
+	                [](const FPanelOverrideRule& OverrideRule)
+	                {
+		                return Print(OverrideRule);
+	                });
+	
+	return FString::Printf(TEXT("[%d: %s]"), FloorOverride.FloorIndex, *FString::Join(OverrideRules, TEXT(" ")));
+}
+
 FString Print(const FPBRuleSet& RuleSet)
 {
 	TArray<FString> RulesAsString;
+	TArray<FString> Overrides;
 
 	EPanelBuildingSide Sides[] = {
 		EPanelBuildingSide::Front,
@@ -142,7 +161,18 @@ FString Print(const FPBRuleSet& RuleSet)
 		RulesAsString.Add(Print(RuleSet.GetPBRule(Side)));
 	}
 
-	return FString::Join(RulesAsString, TEXT(" | "));
+	for (const auto& FloorOverride : RuleSet.FloorOverrides)
+	{
+		Overrides.Add(Print(FloorOverride));
+	}
+
+	FString Result = FString::Join(RulesAsString, TEXT(" | "));
+	if (Overrides.Num() > 0)
+	{
+		Result += " " + FString::Join(Overrides, TEXT(" "));
+	}
+
+	return Result;
 }
 
 struct FPositiveTestCase
@@ -161,7 +191,10 @@ bool PBGrammarParserTestPositives::RunTest(const FString& Parameters)
 		{"1 | {2 3 }+ |2|{2 3}+", "1 | {2 3}+ | 2 | {2 3}+"},
 
 		// general parsing correctness test
-		{"1 2 {2 3}* 2 1|2 3| 1 2 {3 4}+ 2 1", "1 2 {2 3}* 2 1 | 2 3 | 1 2 {3 4}+ 2 1 | 2 3"}
+		{"1 2 {2 3}* 2 1|2 3| 1 2 {3 4}+ 2 1", "1 2 {2 3}* 2 1 | 2 3 | 1 2 {3 4}+ 2 1 | 2 3"},
+
+		// panel floor overrides
+		{"1 2 | {2}+ [0: 3 > 4] [1: 1>2 2>3]", "1 2 | {2}+ | 1 2 | {2}+ [0: 3>4] [1: 1>2 2>3]"}
 	};
 
 	for (const auto& TestCase : TestCases)
