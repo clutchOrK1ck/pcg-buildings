@@ -913,6 +913,7 @@ bool UPCGPanelBuildingHelpers::FitPanelsToBoundingBox2(const FPBRuleSet& PanelHo
                                                        const float BottomOffset, 
                                                        const float TopOffset, 
                                                        FBox& GeneratedDimensions,
+                                                       int& OutNumFloors,
                                                        const TArray<UPBPanelLayout*>& Panels, 
                                                        TArray<FPositionedPanelInfo>& OutPanels)
 {
@@ -1004,6 +1005,8 @@ bool UPCGPanelBuildingHelpers::FitPanelsToBoundingBox2(const FPBRuleSet& PanelHo
 	GeneratedDimensions.Min = FVector{0., -RightDepth, 0.};
 	GeneratedDimensions.Max = FVector{FrontalWidth, 0., BottomOffset + NumFloors * FloorHeight + TopOffset};
 
+	OutNumFloors = NumFloors;
+	
 	return true;
 }
 

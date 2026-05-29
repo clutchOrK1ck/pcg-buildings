@@ -35,6 +35,9 @@ public:
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Panel Buildings")
 	float BuildingHeight;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Panel Buildings")
+	int NumFloors;
 	
 	// Sets default values for this actor's properties
 	APanelBuildingActor();
@@ -51,6 +54,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
 	UPanelBuildingBounds* Boundaries;
+
+	UPROPERTY(BlueprintReadOnly, Category="Panel Buildings")
+	TArray<FPositionedPanelInfo> Panels;
 	
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

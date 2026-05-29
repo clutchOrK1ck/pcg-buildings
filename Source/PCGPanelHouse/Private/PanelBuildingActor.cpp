@@ -5,7 +5,6 @@
 #include "Framework/Notifications/NotificationManager.h"
 #include "Widgets/Notifications/SNotificationList.h"
 #include "PBGrammar.h"
-#include "PCGGraph.h"
 #include "Algo/AnyOf.h"
 
 
@@ -31,7 +30,7 @@ void APanelBuildingActor::OnConstruction(const FTransform& Transform)
 		if (IsValidPanelBuildingConfig(ValidationError, RuleSet))
 		{
 			FBox GeneratedDimensions;
-			TArray<FPositionedPanelInfo> PositionedPanels;
+			Panels.Empty();
 			
 			UPCGPanelBuildingHelpers::FitPanelsToBoundingBox2(
 				RuleSet,
@@ -39,8 +38,9 @@ void APanelBuildingActor::OnConstruction(const FTransform& Transform)
 				BasementHeight,
 				RoofHeight,
 				GeneratedDimensions,
+				NumFloors,
 				PanelConfig,
-				PositionedPanels);
+				Panels);
 
 			FloorHeight = PanelConfig[0]->Height;
 			BuildingHeight = GeneratedDimensions.GetExtent().Z * 2.;

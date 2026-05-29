@@ -373,6 +373,7 @@ public:
 		const float BottomOffset,
 		const float TopOffset,
 		FBox& GeneratedDimensions,
+		int& NumFloors,
 		const TArray<UPBPanelLayout*>& Panels,
 		TArray<FPositionedPanelInfo>& OutPanels);
 	
