@@ -1002,8 +1002,8 @@ bool UPCGPanelBuildingHelpers::FitPanelsToBoundingBox2(const FPBRuleSet& PanelHo
 	ApplyOverrides(OutPanels, PanelHouseRuleSet, Panels);
 	
 	// write the dimensions of the generated building to the out bounding box
-	GeneratedDimensions.Min = FVector{0., -RightDepth, 0.};
-	GeneratedDimensions.Max = FVector{FrontalWidth, 0., BottomOffset + NumFloors * FloorHeight + TopOffset};
+	GeneratedDimensions.Min = FVector{-RightDepth, 0., 0.};
+	GeneratedDimensions.Max = FVector{0., FrontalWidth, BottomOffset + NumFloors * FloorHeight + TopOffset};
 
 	OutNumFloors = NumFloors;
 	

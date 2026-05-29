@@ -42,6 +42,11 @@ void APanelBuildingActor::OnConstruction(const FTransform& Transform)
 				PanelConfig,
 				Panels);
 
+			// set the boundaries component to match the size of the generated building
+			Boundaries->Width = GeneratedDimensions.GetSize().Y;
+			Boundaries->Depth = GeneratedDimensions.GetSize().X;
+			Boundaries->Height = GeneratedDimensions.GetSize().Z;
+
 			FloorHeight = PanelConfig[0]->Height;
 			BuildingHeight = GeneratedDimensions.GetExtent().Z * 2.;
 		}
