@@ -70,25 +70,25 @@ bool PBGrammarParserTestNegatives::RunTest(const FString& Parameters)
 
 	for (const auto& NegativeTestCase : Cases)
 	{
-		FPBRuleSet RuleSet;
-		FParsingError ParsingError;
+		FString ParsingError;
 
-		auto Result = ParsePBGrammar(NegativeTestCase.TestGrammar, RuleSet, ParsingError);
+		auto Parser = FBuildingGrammarParser(NegativeTestCase.TestGrammar);
+		Parser.Parse();
 
-		if (Result)
+		if (!Parser.GetError())
 		{
 			this->AddError(
 				"Expression '" + NegativeTestCase.TestGrammar +
 				"' was expected to be unparseable, parsed successfully instead");
 			continue;
 		}
-
-		if (NegativeTestCase.ExpectedErrorPosition != ParsingError.Position)
+		
+		if (NegativeTestCase.ExpectedErrorPosition != Parser.GetError()->GetPosition())
 		{
 			this->AddError("Expected parsing error at position {"
 				+ FString::FromInt(NegativeTestCase.ExpectedErrorPosition)
 				+ "}, received {"
-				+ FString::FromInt(ParsingError.Position)
+				+ FString::FromInt(Parser.GetError()->GetPosition())
 				+ "} instead in grammar '"
 				+ NegativeTestCase.TestGrammar + "'");
 		}
@@ -199,18 +199,16 @@ bool PBGrammarParserTestPositives::RunTest(const FString& Parameters)
 
 	for (const auto& TestCase : TestCases)
 	{
-		FPBRuleSet RuleSet;
-		FParsingError ParsingError;
-		
-		auto Result = ParsePBGrammar(TestCase.TestGrammar, RuleSet, ParsingError);
+		auto Parser = FBuildingGrammarParser(TestCase.TestGrammar);
+		Parser.Parse();
 
-		if (!Result)
+		if (Parser.GetError())
 		{
 			this->AddError("Grammar '" + TestCase.TestGrammar + "' could not be parsed successfully");
 			continue;
 		}
 
-		FString StringifiedRuleSet = Print(RuleSet);
+		FString StringifiedRuleSet = Print(Parser.GetRuleSet());
 		this->TestEqual("Grammar parsed correctly", StringifiedRuleSet, TestCase.ExpectedGrammar);
 	}
 	
@@ -284,8 +282,6 @@ void SimpleFitInBoundingBox(FPBRuleSet& OutRuleSet,
 			}
 		}
 	});
-
-	OutRuleSet.UpdateReferencedIndices();
 	
 	TestCaseDescr = "Fitting a simple ruleset into bounding box should work";
 	Expect = true;
@@ -364,7 +360,18 @@ bool PBFittingAlgorithmTests::RunTest(const FString& Parameters)
 
 		TestDataGenerator(RuleSet, Layouts, BoundingBox, Expect, TestCaseDescription);
 
-		const auto Result = UPCGPanelBuildingHelpers::FitPanelsToBoundingBox(RuleSet, BoundingBox, Layouts, OutPositionedPanels);
+		FBox GeneratedDimensions;
+		int GeneratedNumFloors;
+
+		const auto Result = FitPanelsToBoundingBox(RuleSet,
+			BoundingBox,
+			0.,
+			0.,
+			GeneratedDimensions,
+			GeneratedNumFloors,
+			Layouts,
+			OutPositionedPanels);
+		
 		if (Result != Expect)
 		{
 			this->AddError("Unexpected result for test case: " + TestCaseDescription);

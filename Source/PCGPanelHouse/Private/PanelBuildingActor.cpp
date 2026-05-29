@@ -32,7 +32,7 @@ void APanelBuildingActor::OnConstruction(const FTransform& Transform)
 			FBox GeneratedDimensions;
 			Panels.Empty();
 			
-			UPCGPanelBuildingHelpers::FitPanelsToBoundingBox2(
+			FitPanelsToBoundingBox(
 				RuleSet,
 				Boundaries->GetBounds(),
 				BasementHeight,
@@ -93,15 +93,15 @@ bool APanelBuildingActor::IsValidPanelBuildingConfig(FString& OutErrorMessage, F
 	// catch invalid grammars first
 	if (!Grammar.IsEmpty())
 	{
-		FParsingError ParsingError;
-		
-		ParsePBGrammar(this->Grammar, RuleSet, ParsingError);
+		auto Parser = FBuildingGrammarParser(Grammar);
+		Parser.Parse();
 
-		if (!ParsingError.ErrorMessage.IsEmpty())
+		if (Parser.GetError())
 		{
-			OutErrorMessage = ToString(ParsingError, Grammar);
 			return false;
 		}
+
+		RuleSet = Parser.GetRuleSet();
 	}
 
 	if (!Grammar.IsEmpty() && (PanelConfig.IsEmpty() || Algo::AnyOf(PanelConfig, [](const UPBPanelLayout* PanelLayout)

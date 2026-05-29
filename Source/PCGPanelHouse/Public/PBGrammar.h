@@ -85,68 +85,14 @@ struct FPBRuleSet
 private:
 	// if the number of rules actually stored is less than the index of requested side, we "complete" the rule
 	static const int CompletionRules[][4];
-	TSet<int> Indices {}; // panel indices that are referenced by this ruleset
 
 public:
 	TArray<FPBRule> Rules; // rules defined by the user
 	TArray<FPanelFloorOverrides> FloorOverrides; // overrides of panels per floor
 	
 	const FPBRule& GetPBRule(const EPanelBuildingSide Side) const;
-
-	// collects panel indices referenced by this panel
-	void UpdateReferencedIndices();
-	
-	const TSet<int>& GetIndices() const;
+	TSet<int> GetPanelIndices() const;
 	const FPanelOverrideRule* FindOverride(const int FloorIndex, const int PanelIndex) const;
-};
-
-/**
- * an error that occurred while parsing the panel building grammar
- */
-struct FParsingError
-{
-	FString ErrorMessage;
-	int Position {-1};
-
-	FParsingError()
-	{
-	}
-	
-	FParsingError(const FParsingError& Other)
-		: ErrorMessage(Other.ErrorMessage),
-		  Position(Other.Position)
-	{
-	}
-
-	FParsingError(FParsingError&& Other) noexcept
-		: ErrorMessage(std::move(Other.ErrorMessage)),
-		  Position(Other.Position)
-	{
-	}
-
-	FParsingError& operator=(const FParsingError& Other)
-	{
-		if (this == &Other)
-			return *this;
-		ErrorMessage = Other.ErrorMessage;
-		Position = Other.Position;
-		return *this;
-	}
-
-	FParsingError& operator=(FParsingError&& Other) noexcept
-	{
-		if (this == &Other)
-			return *this;
-		ErrorMessage = std::move(Other.ErrorMessage);
-		Position = Other.Position;
-		return *this;
-	}
-
-	void ErrorAtPosition(const FString& InErrorMessage, const int InPosition)
-	{
-		this->ErrorMessage = InErrorMessage;
-		this->Position = InPosition;
-	}
 };
 
 class FParsingException
@@ -160,6 +106,7 @@ public:
 	
 	virtual FString GetErrorMessage() const;
 	uint32 GetPosition() const;
+	FString GetFormattedErrorMessage(const FString& Grammar) const;
 };
 
 class FEOL : public FParsingException
@@ -188,7 +135,7 @@ class FBuildingGrammarParser
 	FString Grammar;
 	uint32 Cursor;
 	FPBRuleSet RuleSet;
-	FParsingException Error;
+	TArray<FParsingException> Errors;
 
 	/**
 	 * accumulates characters into accumulator and returns the accumulator transformed into some value
@@ -289,22 +236,11 @@ class FBuildingGrammarParser
 	void ReadFloorOverrides();
 	
 public:
-	FBuildingGrammarParser(const FString& InGrammar) : Grammar(InGrammar), Cursor(0), Error("", -1) {}
+	FBuildingGrammarParser(const FString& InGrammar) : Grammar(InGrammar), Cursor(0) {}
 	void Parse();
 	FPBRuleSet GetRuleSet() const {return RuleSet;}
+	const FParsingException* GetError() const;
 };
-
-FString ToString(const FParsingError& ParsingError, const FString& Grammar);
-
-/**
- * parse a grammar string (like 1-2-{2-3}+-2-1)
- * 
- * @param Grammar
- * @param OutRuleSet
- * @param OutErrorMessage information on parsing errors
- * @return 
- */
-bool ParsePBGrammar(const FString& Grammar, FPBRuleSet& OutRuleSet, FParsingError& OutError);
 
 
 USTRUCT(BlueprintType)
@@ -344,31 +280,7 @@ struct FPanelPlacement
 	int Repeat {0};							// how many times this group is repeated
 };
 
-UCLASS()
-class PCGPANELHOUSE_API UPCGPanelBuildingHelpers : public UBlueprintFunctionLibrary
-{
-	GENERATED_BODY()
-
-public:
-	/**
-	 * fits a grammar to a bounding box
-	 *
-	 * the fitting algorithm will repeat or remove (if optional) panel groups to fit the bounding box as closely as possible
-	 * 
-	 * @param PanelHouseRuleSet the rule set parsed from a building grammar
-	 * @param BoundingBox bounding box describing the desired building dimensions
-	 * @param Panels a collection of panels used by this building
-	 * @param OutPanels an array of panel info (position, meta, etc.) that can be used to generate PCG point data
-	 */
-	UFUNCTION(BlueprintCallable)
-	static bool FitPanelsToBoundingBox(const FPBRuleSet& PanelHouseRuleSet, const FBox& BoundingBox, const TArray<UPBPanelLayout*>& Panels, TArray<FPositionedPanelInfo>& OutPanels);
-
-	/**
-	 * 
-	 * same as above but also generates floors above 0
-	 */
-	UFUNCTION(BlueprintCallable)
-	static bool FitPanelsToBoundingBox2(const FPBRuleSet& PanelHouseRuleSet,
+bool FitPanelsToBoundingBox(const FPBRuleSet& PanelHouseRuleSet,
 		const FBox& TargetDimensions,
 		const float BottomOffset,
 		const float TopOffset,
@@ -376,10 +288,3 @@ public:
 		int& NumFloors,
 		const TArray<UPBPanelLayout*>& Panels,
 		TArray<FPositionedPanelInfo>& OutPanels);
-	
-	UFUNCTION(BlueprintCallable)
-	static void ParseGrammar(const FString& Grammar, FPBRuleSet& OutRuleSet, bool& Success, FString& ErrorString);
-
-	UFUNCTION(BlueprintCallable)
-	static void GetReferencedIndices(const FPBRuleSet& RuleSet, TArray<int>& Indices);
-};
