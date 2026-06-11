@@ -1,0 +1,22 @@
+[project]
+name = "announcements"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "clutch-or-kick",email = "serhii.poklonskyi@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "jinja2 (>=3.1.6,<4.0.0)",
+    "markdown (>=3.10.2,<4.0.0)",
+    "pyyaml (>=6.0.3,<7.0.0)",
+    "weasyprint (>=69.0,<70.0)",
+    "pymupdf (>=1.27.2.3,<2.0.0.0)",
+    "pillow (>=12.2.0,<13.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
