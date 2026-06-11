@@ -6,17 +6,17 @@
 
     <style>
         @page {
-            size: A4 landscape;
+            size: 84mm 148mm;
             margin: 0;
+        }
+
+        :root {
+            --base-font-size: 16pt;
+            --tab-font-size: 14pt;
         }
 
         * {
             box-sizing: border-box;
-        }
-
-        :root {
-            --base-font-size: 42pt;
-            --tab-font-size: 20pt;
         }
 
         body {
@@ -26,8 +26,8 @@
         }
 
         .page {
-            width: 297mm;
-            height: 210mm;
+            width: 84mm;
+            height: 148mm;
             margin: 0 auto;
             background: white;
             display: flex;
@@ -37,7 +37,7 @@
         /* Main announcement area */
         .main {
             flex: 1;
-            padding: 14mm;
+            padding: 0;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -45,34 +45,14 @@
             font-size: var(--base-font-size);
         }
 
-        .main h1 {
-            font-size: calc(var(--base-font-size) * 1.4);
-            margin: 0 0 12mm;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .main .subtitle {
-            font-size: calc(var(--base-font-size) * 1.2);
-            font-weight: bold;
-            margin-bottom: 10mm;
-        }
-
-        .main .text {
-            font-size: var(--base-font-size);
-            line-height: 1.45;
-            margin-bottom: 10mm;
-        }
-
-        .main .highlight {
-            font-size: calc(var(--base-font-size) * 1.2);
-            font-weight: bold;
-            margin-top: 8mm;
+        .main h1, h2, h3, h4, h5, p {
+            margin-block-start: 0.2em;
+            margin-block-end: 0.2em;
         }
 
         /* Tear-off section */
         .tearoff-section {
-            height: 60mm;
+            height: 42mm;
             border-top: 1px dashed #111;
             display: flex;
         }

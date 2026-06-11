@@ -6,17 +6,17 @@
 
     <style>
         @page {
-            size: A4 landscape;
+            size: A5 portrait;
             margin: 0;
+        }
+
+        :root {
+            --base-font-size: 26pt;
+            --tab-font-size: 16pt;
         }
 
         * {
             box-sizing: border-box;
-        }
-
-        :root {
-            --base-font-size: 42pt;
-            --tab-font-size: 20pt;
         }
 
         body {
@@ -26,7 +26,7 @@
         }
 
         .page {
-            width: 297mm;
+            width: 148mm;
             height: 210mm;
             margin: 0 auto;
             background: white;
@@ -72,7 +72,7 @@
 
         /* Tear-off section */
         .tearoff-section {
-            height: 60mm;
+            height: 42mm;
             border-top: 1px dashed #111;
             display: flex;
         }

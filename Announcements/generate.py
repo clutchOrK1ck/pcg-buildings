@@ -93,4 +93,4 @@ for template_folder in templates_folder.iterdir():
 
         texture = Image.merge('RGBA', (channel_r, channel_g, channel_blue, channel_alpha))
 
-        texture.save(fp=output_folder / ('%s_%s.png' % (template_name, content_variation.name)), format='png')
+        texture.save(fp=output_folder / ('%s_%s.png' % (template_name, content_variation.name.replace('.md', ''))), format='png')

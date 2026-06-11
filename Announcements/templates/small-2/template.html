@@ -6,17 +6,17 @@
 
     <style>
         @page {
-            size: A4 landscape;
+            size: 210mm 89mm;
             margin: 0;
+        }
+
+        :root {
+            --base-font-size: 11pt;
+            --tab-font-size: 10pt;
         }
 
         * {
             box-sizing: border-box;
-        }
-
-        :root {
-            --base-font-size: 42pt;
-            --tab-font-size: 20pt;
         }
 
         body {
@@ -26,8 +26,8 @@
         }
 
         .page {
-            width: 297mm;
-            height: 210mm;
+            width: 210mm;
+            height: 89mm;
             margin: 0 auto;
             background: white;
             display: flex;
@@ -42,7 +42,6 @@
             flex-direction: column;
             justify-content: center;
             text-align: center;
-            font-size: var(--base-font-size);
         }
 
         .main h1 {
@@ -72,7 +71,7 @@
 
         /* Tear-off section */
         .tearoff-section {
-            height: 60mm;
+            height: 42mm;
             border-top: 1px dashed #111;
             display: flex;
         }
