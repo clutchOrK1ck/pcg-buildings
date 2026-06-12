@@ -113,7 +113,6 @@ for texture in textures:
         continue
 
     factory = unreal.MaterialInstanceConstantFactoryNew()
-    factory.set_editor_property("initial_parent", parent_material)
 
     mi = asset_tools.create_asset(
         asset_name=instance_name,
@@ -135,7 +134,8 @@ for texture in textures:
     )
 
     # set the default parameters
-    param_overrides = {key: val for key, val in DEFAULT_PARAMS.items() if key in texture_name}.values()[0]
+    param_overrides = [overrides for tex_name, overrides in DEFAULT_PARAMS.items() if tex_name in texture_name][0]
+
     for param_name in param_overrides:
         param_value = param_overrides[param_name]
 
