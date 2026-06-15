@@ -20,33 +20,33 @@ class Params:
 
 DEFAULT_PARAMS = {
     'A4-landscape': {
-        Params.Cutoff: -5.,
-        Params.NoiseIntensity: 0.968,
-        Params.Rotation: 20 / 360,
+        Params.Cutoff: 0.754,
+        Params.NoiseIntensity: 0.696,
+        Params.Rotation: 0.035,
         Params.RandomizeTabsPerInstance: True
     },
     'A5-landscape': {
-        Params.Cutoff: -5.,
+        Params.Cutoff: 0.8,
         Params.NoiseIntensity: 0.968,
-        Params.Rotation: 20 / 360,
+        Params.Rotation: 0.035,
         Params.RandomizeTabsPerInstance: True
     },
     'A5-portrait': {
-        Params.Cutoff: -5.,
+        Params.Cutoff: 0.8,
         Params.NoiseIntensity: 0.968,
-        Params.Rotation: 20 / 360,
+        Params.Rotation: 0.035,
         Params.RandomizeTabsPerInstance: True
     },
     'small-1': {
-        Params.Cutoff: -5.,
+        Params.Cutoff: 0.75,
         Params.NoiseIntensity: 0.968,
-        Params.Rotation: 20 / 360,
+        Params.Rotation: 0.035,
         Params.RandomizeTabsPerInstance: True
     },
     'small-2': {
-        Params.Cutoff: -5.,
+        Params.Cutoff: 0.8,
         Params.NoiseIntensity: 0.968,
-        Params.Rotation: 20 / 360,
+        Params.Rotation: 0.035,
         Params.RandomizeTabsPerInstance: True
     }
 }

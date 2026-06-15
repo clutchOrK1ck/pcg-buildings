@@ -11,7 +11,14 @@ from PIL import Image
 
 templates_folder = Path("templates")
 output_folder = Path("output")
+output_debug_folder = Path("output") / "debug"
 env = Environment(autoescape=select_autoescape(['html', 'xml']))
+
+if not output_folder.exists():
+    output_folder.mkdir()
+
+if not output_debug_folder.exists():
+    output_debug_folder.mkdir()
 
 
 def build_random_telephone_number() -> str:
@@ -47,11 +54,14 @@ def build_tearoff_items(n, random_bw_color=False, blank=False):
     return items
 
 
-def render(html: str):
+def render(html: str, template_name: str):
     pdf_bytes = HTML(string=html).write_pdf()
 
     pdf_doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     page = pdf_doc[0]
+
+    # saved pdf (debugging)
+    pdf_doc.save(str(output_debug_folder / f'{template_name}.pdf'))
 
     pix = page.get_pixmap(dpi=80, alpha=False, colorspace=fitz.csGRAY)
 
@@ -79,12 +89,20 @@ for template_folder in templates_folder.iterdir():
         # render the normal announcement html
         normal_render = template.render(announcement_text=announcement_html,
                                         tearoff_items=build_tearoff_items(variables['n_tearoff_items']))
-        channel_r = render(normal_render)
+
+        # save the html for debuggin purposes
+        (output_debug_folder / f'{template_name}.html').write_text(normal_render, encoding="utf-8")
+
+        channel_r = render(normal_render, template_name)
 
         # render the black-and-white id map
         id_map_render = template.render(announcement_text=None,
                                         tearoff_items=build_tearoff_items(variables['n_tearoff_items'], True, True))
-        channel_g = render(id_map_render)
+
+        # save the id map html for debugging purposes
+        (output_debug_folder / f'{template_name}_id_map.html').write_text(id_map_render, encoding="utf-8")
+
+        channel_g = render(id_map_render, template_name)
 
         # white texture for blue and alpha
         w, h = channel_r.size
@@ -92,5 +110,9 @@ for template_folder in templates_folder.iterdir():
         channel_alpha = Image.new('L', (w, h), 255)
 
         texture = Image.merge('RGBA', (channel_r, channel_g, channel_blue, channel_alpha))
+
+        # the resulting image contains some white pixels at the bottom where they are not wanted - the easiest solution is just cropping
+        crop_pxl_number = 1
+        texture = texture.crop((crop_pxl_number, 0, w-crop_pxl_number, h-crop_pxl_number))
 
         texture.save(fp=output_folder / ('%s_%s.png' % (template_name, content_variation.name.replace('.md', ''))), format='png')
