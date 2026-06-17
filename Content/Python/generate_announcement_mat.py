@@ -108,7 +108,7 @@ def get_param_overrides_for_texture(texture_name: str):
 
 def set_param_overrides(mat_instance, overrides):
     for override_name in overrides:
-        override_value = overrides[param_name]
+        override_value = overrides[override_name]
 
         setter_f = None
         if type(override_value) in {int, float}:
