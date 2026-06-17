@@ -21,31 +21,31 @@ class Params:
 DEFAULT_PARAMS = {
     'A4-landscape': {
         Params.Cutoff: 0.754,
-        Params.NoiseIntensity: 0.696,
-        Params.Rotation: 0.035,
+        Params.NoiseIntensity: 0.84,
+        Params.Rotation: 0.064,
         Params.RandomizeTabsPerInstance: True
     },
     'A5-landscape': {
-        Params.Cutoff: 0.8,
-        Params.NoiseIntensity: 0.968,
-        Params.Rotation: 0.035,
+        Params.Cutoff: 0.716,
+        Params.NoiseIntensity: 0.38,
+        Params.Rotation: 0.052,
         Params.RandomizeTabsPerInstance: True
     },
     'A5-portrait': {
         Params.Cutoff: 0.8,
-        Params.NoiseIntensity: 0.968,
-        Params.Rotation: 0.035,
+        Params.NoiseIntensity: 0.416,
+        Params.Rotation: 0.083,
         Params.RandomizeTabsPerInstance: True
     },
     'small-1': {
         Params.Cutoff: 0.75,
-        Params.NoiseIntensity: 0.968,
-        Params.Rotation: 0.035,
+        Params.NoiseIntensity: 0.688,
+        Params.Rotation: 0.059,
         Params.RandomizeTabsPerInstance: True
     },
     'small-2': {
         Params.Cutoff: 0.8,
-        Params.NoiseIntensity: 0.968,
+        Params.NoiseIntensity: 1.07,
         Params.Rotation: 0.035,
         Params.RandomizeTabsPerInstance: True
     }
@@ -102,6 +102,26 @@ unreal.log(f"Found {len(textures)} textures in {TEXTURE_FOLDER}")
 # CREATE MATERIAL INSTANCES
 # ------------------------------------------------------------
 
+def get_param_overrides_for_texture(texture_name: str):
+    return [overrides for tex_name, overrides in DEFAULT_PARAMS.items() if tex_name in texture_name][0]
+
+
+def set_param_overrides(mat_instance, overrides):
+    for override_name in overrides:
+        override_value = overrides[param_name]
+
+        setter_f = None
+        if type(override_value) in {int, float}:
+            setter_f = material_editing_lib.set_material_instance_scalar_parameter_value
+        elif type(override_value) is bool:
+            setter_f = material_editing_lib.set_material_instance_static_switch_parameter_value
+        elif type(override_value) is unreal.LinearColor:
+            setter_f = material_editing_lib.set_material_instance_vector_parameter_value
+
+        if setter_f:
+            setter_f(mat_instance, override_name, override_value)
+
+
 for texture in textures:
     texture_name = texture.get_name()
 
@@ -109,49 +129,33 @@ for texture in textures:
     # T_Brick_BaseColor -> MI_T_Brick_BaseColor
     instance_name = f"MI_Annon_{texture_name}"
 
-    if editor_asset_lib.does_asset_exist(f'{OUTPUT_FOLDER}/{instance_name}'):
-        continue
+    material_instance = editor_asset_lib.load_asset(f'{OUTPUT_FOLDER}/{instance_name}')
+    if not material_instance:
+        material_instance = asset_tools.create_asset(
+            asset_name=instance_name,
+            package_path=OUTPUT_FOLDER,
+            asset_class=unreal.MaterialInstanceConstant,
+            factory=unreal.MaterialInstanceConstantFactoryNew(),
+        )
 
-    factory = unreal.MaterialInstanceConstantFactoryNew()
+        # Make sure the instance has the correct parent.
+        material_instance.set_editor_property("parent", parent_material)
 
-    mi = asset_tools.create_asset(
-        asset_name=instance_name,
-        package_path=OUTPUT_FOLDER,
-        asset_class=unreal.MaterialInstanceConstant,
-        factory=factory,
-    )
+        # Set texture parameter.
+        material_editing_lib.set_material_instance_texture_parameter_value(
+            material_instance,
+            TEXTURE_PARAMETER_NAME,
+            texture
+        )
 
-    unreal.log(f"Created material instance: {mi.get_path_name()}")
-
-    # Make sure the instance has the correct parent.
-    mi.set_editor_property("parent", parent_material)
-
-    # Set texture parameter.
-    material_editing_lib.set_material_instance_texture_parameter_value(
-        mi,
-        TEXTURE_PARAMETER_NAME,
-        texture
-    )
+        unreal.log(f"Created material instance: {material_instance.get_path_name()}")
 
     # set the default parameters
-    param_overrides = [overrides for tex_name, overrides in DEFAULT_PARAMS.items() if tex_name in texture_name][0]
+    param_overrides = get_param_overrides_for_texture(texture_name)
+    set_param_overrides(material_instance, param_overrides)
 
-    for param_name in param_overrides:
-        param_value = param_overrides[param_name]
-
-        setter = None
-        if type(param_value) in {int, float}:
-            setter = material_editing_lib.set_material_instance_scalar_parameter_value
-        elif type(param_value) is bool:
-            setter = material_editing_lib.set_material_instance_static_switch_parameter_value
-        elif type(param_value) is unreal.LinearColor:
-            setter = material_editing_lib.set_material_instance_vector_parameter_value
-
-        if setter:
-            setter(mi, param_name, param_value)
-
-    # Update and save.
-    material_editing_lib.update_material_instance(mi)
-    editor_asset_lib.save_loaded_asset(mi)
+    # Update and save
+    material_editing_lib.update_material_instance(material_instance)
+    editor_asset_lib.save_loaded_asset(material_instance)
 
 unreal.log("Done creating texture-based material instances.")
