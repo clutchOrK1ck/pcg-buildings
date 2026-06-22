@@ -52,9 +52,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
 	UPCGComponent* PCG;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
-	UPanelBuildingBounds* Boundaries;
-
 	UPROPERTY(BlueprintReadOnly, Category="Panel Buildings")
 	TArray<FPositionedPanelInfo> Panels;
 	
@@ -65,6 +62,9 @@ protected:
 	bool IsValidPanelBuildingConfig(FString& OutErrorMessage, FPBRuleSet& OutRuleSet) const;
 
 public:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
+	UPanelBuildingBounds* Boundaries;
+	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 };
