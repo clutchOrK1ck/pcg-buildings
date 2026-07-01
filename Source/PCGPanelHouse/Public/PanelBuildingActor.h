@@ -64,7 +64,13 @@ protected:
 public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
 	UPanelBuildingBounds* Boundaries;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Roof")
+	UMaterialInterface* RoofMaterial;
 	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	UFUNCTION(BlueprintCallable, CallInEditor)
+	void ApplyRoofMaterials();
 };

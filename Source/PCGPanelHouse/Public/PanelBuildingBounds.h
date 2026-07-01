@@ -21,10 +21,10 @@ public:
 	// Sets default values for this component's properties
 	UPanelBuildingBounds();
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float Width;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float Depth;
 
 	UPROPERTY(EditAnywhere)
