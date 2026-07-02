@@ -13,7 +13,7 @@
  * it's mainly a visual fidelity and a helper for editing the panel building bounds
  */
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
-class PCGPANELHOUSE_API UPanelBuildingBounds : public USceneComponent
+class PCGPANELHOUSE_API UPanelBuildingBounds : public UPrimitiveComponent
 {
 	GENERATED_BODY()
 
