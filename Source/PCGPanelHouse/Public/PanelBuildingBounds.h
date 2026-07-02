@@ -13,10 +13,12 @@
  * it's mainly a visual fidelity and a helper for editing the panel building bounds
  */
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
-class PCGPANELHOUSE_API UPanelBuildingBounds : public UActorComponent
+class PCGPANELHOUSE_API UPanelBuildingBounds : public USceneComponent
 {
 	GENERATED_BODY()
 
+	void PostSizeUpdate();
+	
 public:
 	// Sets default values for this component's properties
 	UPanelBuildingBounds();
@@ -30,10 +32,21 @@ public:
 	UPROPERTY(EditAnywhere)
 	float Height;
 
+	UPROPERTY(EditAnywhere)
+	bool ReconstructOwningActorOnChange;
+	
 	UFUNCTION(BlueprintPure)
 	FBox GetBounds() const;
+
+	void SetWidthDepthHeight(float InWidth, float InDepth, float InHeight);
+
+	void Expand(int Axis, float Value);
 	
 	virtual bool IsEditorOnly() const override;
+
+	virtual FBoxSphereBounds CalcBounds(const FTransform& LocalToWorld) const override;
+	
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 
 protected:
 	// Called when the game starts

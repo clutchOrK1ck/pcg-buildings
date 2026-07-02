@@ -10,6 +10,12 @@ EMouseCursor::Type HPanelBuildingBoundsControlHitProxy::GetMouseCursor()
 FVector GetPanelBuildingControlLocation(const UPanelBuildingBounds* BoundsComponent,
 										const EPanelBuildingDimension Dimension)
 {
+	// one of these might be null when recompiling blueprints and such
+	if (!(BoundsComponent && BoundsComponent->GetOwner()))
+	{
+		return FVector::ZeroVector;
+	}
+
 	const auto ActorTransform = BoundsComponent->GetOwner()->GetTransform();
 
 	switch (Dimension)
@@ -43,8 +49,7 @@ bool FPanelBuildingBoundsVisualizer::GetWidgetLocation(const FEditorViewportClie
 		OutLocation = GetPanelBuildingControlLocation(Cast<UPanelBuildingBounds>(GetEditedComponent()), this->State.ActiveControl);
 		return true;
 	}
-
-	UE_LOG(LogTemp, Error, TEXT("Cannot retrieve widget location"));
+	
 	return false;
 }
 
@@ -56,7 +61,7 @@ UActorComponent* FPanelBuildingBoundsVisualizer::GetEditedComponent() const
 bool FPanelBuildingBoundsVisualizer::GetCustomInputCoordinateSystem(const FEditorViewportClient* ViewportClient,
 	FMatrix& OutMatrix) const
 {
-	if (this->State.EditedComponent != nullptr)
+	if (this->State.EditedComponent && this->State.EditedComponent->GetOwner())
 	{
 		OutMatrix = FRotationMatrix(this->State.EditedComponent->GetOwner()->GetActorRotation());
 		return true;
@@ -75,18 +80,17 @@ bool FPanelBuildingBoundsVisualizer::HandleInputDelta(FEditorViewportClient* Vie
 
 	// find local delta transalte (we are supplied with a delta translate in world space)
 	auto LocalTranslate = BoundsComponent->GetOwner()->GetActorRotation().GetInverse().RotateVector(DeltaTranslate);
-	UE_LOG(LogTemp, Display, TEXT("Handling translate delta: %s"), *LocalTranslate.ToString());
 	
 	switch(State.ActiveControl)
 	{
 	case Width:
-		BoundsComponent->Width += LocalTranslate.Y;
+		BoundsComponent->Expand(0, LocalTranslate.Y);
 		return true;
 	case Depth:
-		BoundsComponent->Depth -= LocalTranslate.X;
+		BoundsComponent->Expand(1, -LocalTranslate.X);
 		return true;
 	default:
-		BoundsComponent->Height += LocalTranslate.Z;
+		BoundsComponent->Expand(2, LocalTranslate.Z);
 		return true;
 	}
 }
