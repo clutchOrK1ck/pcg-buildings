@@ -44,6 +44,7 @@ bool FPanelBuildingBoundsVisualizer::GetWidgetLocation(const FEditorViewportClie
 		return true;
 	}
 
+	UE_LOG(LogTemp, Error, TEXT("Cannot retrieve widget location"));
 	return false;
 }
 
