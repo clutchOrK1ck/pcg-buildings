@@ -10,7 +10,22 @@ enum EPanelBuildingDimension : int
 	Height
 };
 
-struct HPanelBuildingBoundsControlHitProxy : public HComponentVisProxy
+struct HPanelBuildingBoundsHitProxy : public HComponentVisProxy
+{
+	HPanelBuildingBoundsHitProxy(const UPanelBuildingBounds* BoundsComponent) : HComponentVisProxy(BoundsComponent) {}
+
+	UPanelBuildingBounds* GetBoundsComponent() const
+	{
+		return Cast<UPanelBuildingBounds>(const_cast<UActorComponent*>(Component.Get()));
+	}
+
+	AActor* GetActor() const
+	{
+		return Component->GetOwner();
+	}
+};
+
+struct HPanelBuildingBoundsControlHitProxy : HPanelBuildingBoundsHitProxy
 {
 private:
 	EPanelBuildingDimension ControlledDimension;
@@ -21,7 +36,7 @@ public:
 	
 	HPanelBuildingBoundsControlHitProxy(const UPanelBuildingBounds* BoundsComponent,
 	                                    const EPanelBuildingDimension ControlledDimension) :
-		HComponentVisProxy(BoundsComponent),
+		HPanelBuildingBoundsHitProxy(BoundsComponent),
 		ControlledDimension(ControlledDimension)
 	{
 	}
@@ -34,13 +49,27 @@ public:
 
 struct FCachedVisualizerState
 {
-	UPanelBuildingBounds* EditedComponent {nullptr};
+	AActor* ComponentOwningActor;
+	UPanelBuildingBounds* VisualizedComponent {nullptr};
 	EPanelBuildingDimension ActiveControl {None};
+};
+
+struct FEditedComponentCache
+{
+	AActor* EditedActor {nullptr};
+	UPanelBuildingBounds* EditedComponent {nullptr};
+
+	void Reset(UPanelBuildingBounds* Component)
+	{
+		EditedComponent = Component;
+		EditedActor = Component->GetOwner();
+	}
 };
 
 class FPanelBuildingBoundsVisualizer : public FComponentVisualizer
 {
-	FCachedVisualizerState State;
+	FEditedComponentCache EditedComponentCache;
+	EPanelBuildingDimension SelectedControl {None};
 	
 public:
 	virtual bool GetWidgetLocation(const FEditorViewportClient* ViewportClient, FVector& OutLocation) const override;

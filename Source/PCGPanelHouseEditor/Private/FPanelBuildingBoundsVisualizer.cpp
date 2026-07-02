@@ -44,9 +44,9 @@ FVector GetPanelBuildingControlLocation(const UPanelBuildingBounds* BoundsCompon
 bool FPanelBuildingBoundsVisualizer::GetWidgetLocation(const FEditorViewportClient* ViewportClient,
                                                        FVector& OutLocation) const
 {
-	if (this->State.ActiveControl != None && GetEditedComponent() != nullptr)
+	if (SelectedControl != None && GetEditedComponent() != nullptr)
 	{
-		OutLocation = GetPanelBuildingControlLocation(Cast<UPanelBuildingBounds>(GetEditedComponent()), this->State.ActiveControl);
+		OutLocation = GetPanelBuildingControlLocation(Cast<UPanelBuildingBounds>(GetEditedComponent()), SelectedControl);
 		return true;
 	}
 	
@@ -55,15 +55,15 @@ bool FPanelBuildingBoundsVisualizer::GetWidgetLocation(const FEditorViewportClie
 
 UActorComponent* FPanelBuildingBoundsVisualizer::GetEditedComponent() const
 {
-	return this->State.EditedComponent;
+	return EditedComponentCache.EditedComponent;
 }
 
 bool FPanelBuildingBoundsVisualizer::GetCustomInputCoordinateSystem(const FEditorViewportClient* ViewportClient,
 	FMatrix& OutMatrix) const
 {
-	if (this->State.EditedComponent && this->State.EditedComponent->GetOwner())
+	if (EditedComponentCache.EditedComponent && EditedComponentCache.EditedComponent->GetOwner())
 	{
-		OutMatrix = FRotationMatrix(this->State.EditedComponent->GetOwner()->GetActorRotation());
+		OutMatrix = FRotationMatrix(EditedComponentCache.EditedComponent->GetOwner()->GetActorRotation());
 		return true;
 	}
 
@@ -74,23 +74,21 @@ bool FPanelBuildingBoundsVisualizer::HandleInputDelta(FEditorViewportClient* Vie
                                                       FVector& DeltaTranslate, FRotator& DeltaRotate,
                                                       FVector& DeltaScale)
 {
-	if (!GetEditedComponent() || State.ActiveControl == None) return false;
-
-	auto BoundsComponent = Cast<UPanelBuildingBounds>(GetEditedComponent());
+	if (!EditedComponentCache.EditedComponent || SelectedControl == None) return false;
 
 	// find local delta transalte (we are supplied with a delta translate in world space)
-	auto LocalTranslate = BoundsComponent->GetOwner()->GetActorRotation().GetInverse().RotateVector(DeltaTranslate);
+	auto LocalTranslate = EditedComponentCache.EditedComponent->GetOwner()->GetActorRotation().GetInverse().RotateVector(DeltaTranslate);
 	
-	switch(State.ActiveControl)
+	switch(SelectedControl)
 	{
 	case Width:
-		BoundsComponent->Expand(0, LocalTranslate.Y);
+		EditedComponentCache.EditedComponent->Expand(0, LocalTranslate.Y);
 		return true;
 	case Depth:
-		BoundsComponent->Expand(1, -LocalTranslate.X);
+		EditedComponentCache.EditedComponent->Expand(1, -LocalTranslate.X);
 		return true;
 	default:
-		BoundsComponent->Expand(2, LocalTranslate.Z);
+		EditedComponentCache.EditedComponent->Expand(2, LocalTranslate.Z);
 		return true;
 	}
 }
@@ -99,15 +97,28 @@ bool FPanelBuildingBoundsVisualizer::VisProxyHandleClick(FEditorViewportClient* 
                                                          HComponentVisProxy* VisProxy,
                                                          const FViewportClick& Click)
 {
-	if (VisProxy != nullptr && VisProxy->IsA(HPanelBuildingBoundsControlHitProxy::StaticGetType()))
+	if (VisProxy)
 	{
-		this->State.ActiveControl = static_cast<HPanelBuildingBoundsControlHitProxy*>(VisProxy)->GetControlledDimension();
-		this->State.EditedComponent = Cast<UPanelBuildingBounds>(
-			const_cast<UActorComponent*>(VisProxy->Component.Get())
-		);
-	}
+		if (VisProxy->IsA(HPanelBuildingBoundsControlHitProxy::StaticGetType()))
+		{
+			auto Proxy = static_cast<HPanelBuildingBoundsControlHitProxy*>(VisProxy);
+			EditedComponentCache.Reset(Proxy->GetBoundsComponent());
+			SelectedControl = Proxy->GetControlledDimension();
+			return true;
+		}
 
-	return true;
+		if (VisProxy->IsA(HPanelBuildingBoundsHitProxy::StaticGetType()))
+		{
+			auto Proxy = static_cast<HPanelBuildingBoundsHitProxy*>(VisProxy);
+			EditedComponentCache.Reset(Proxy->GetBoundsComponent());
+			SelectedControl = None;
+			return true;
+		}
+
+		return false;
+	}
+	
+	return false;
 }
 
 void FPanelBuildingBoundsVisualizer::DrawVisualization(const UActorComponent* Component, const FSceneView* View,
@@ -115,26 +126,33 @@ void FPanelBuildingBoundsVisualizer::DrawVisualization(const UActorComponent* Co
 {
 	if (Component == nullptr) return;
 	if (Component->GetClass() != UPanelBuildingBounds::StaticClass()) return;
-
-	const auto BuildingBoundsComponent = Cast<UPanelBuildingBounds>(Component);
-	FBox LocalBounds = BuildingBoundsComponent->GetBounds();
+	auto BoundariesComponent = Cast<UPanelBuildingBounds>(const_cast<UActorComponent*>(Component));
+	
+	if (EditedComponentCache.EditedActor != BoundariesComponent->GetOwner())
+	{
+		SelectedControl = None;
+		EditedComponentCache.Reset(BoundariesComponent);
+	}
+	
+	FBox LocalBounds = BoundariesComponent->GetBounds();
 
 	FMatrix GlobalTransform = Component->GetOwner() != nullptr && Component->GetOwner()->IsA<AActor>()
 		                          ? Component->GetOwner()->GetTransform().ToMatrixNoScale()
 		                          : FMatrix();
 
 	// bounding box
+	PDI->SetHitProxy(new HPanelBuildingBoundsHitProxy(BoundariesComponent));
 	DrawWireBox(PDI, GlobalTransform, LocalBounds, FLinearColor::Red, 0);
 
 	// draw bounding box controls
-	PDI->SetHitProxy(new HPanelBuildingBoundsControlHitProxy(BuildingBoundsComponent, Width));
-	PDI->DrawPoint(GetPanelBuildingControlLocation(BuildingBoundsComponent, Width), FColor::White, 10., 0);
+	PDI->SetHitProxy(new HPanelBuildingBoundsControlHitProxy(BoundariesComponent, Width));
+	PDI->DrawPoint(GetPanelBuildingControlLocation(BoundariesComponent, Width), FColor::White, 10., 0);
 
-	PDI->SetHitProxy(new HPanelBuildingBoundsControlHitProxy(BuildingBoundsComponent, Depth));
-	PDI->DrawPoint(GetPanelBuildingControlLocation(BuildingBoundsComponent, Depth), FColor::White, 10., 0);
+	PDI->SetHitProxy(new HPanelBuildingBoundsControlHitProxy(BoundariesComponent, Depth));
+	PDI->DrawPoint(GetPanelBuildingControlLocation(BoundariesComponent, Depth), FColor::White, 10., 0);
 
-	PDI->SetHitProxy(new HPanelBuildingBoundsControlHitProxy(BuildingBoundsComponent, Height));
-	PDI->DrawPoint(GetPanelBuildingControlLocation(BuildingBoundsComponent, Height), FColor::White, 10., 0);
+	PDI->SetHitProxy(new HPanelBuildingBoundsControlHitProxy(BoundariesComponent, Height));
+	PDI->DrawPoint(GetPanelBuildingControlLocation(BoundariesComponent, Height), FColor::White, 10., 0);
 
 	PDI->SetHitProxy(nullptr);
 }

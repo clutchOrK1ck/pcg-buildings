@@ -3,7 +3,6 @@
 
 #include "PanelBuildingActor.h"
 
-#include "MovieSceneSequenceID.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "Widgets/Notifications/SNotificationList.h"
 #include "PBGrammar.h"
@@ -66,6 +65,7 @@ void APanelBuildingActor::OnConstruction(const FTransform& Transform)
 		if (PCG->GetGraph() != nullptr)
 		{
 			UE_LOG(LogTemp, Display, TEXT("Regen PCG graph"));
+			PCG->SetIsPartitioned(false);
 			PCG->GenerateLocal(true);
 		}
 	}
