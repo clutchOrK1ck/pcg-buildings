@@ -1,8 +1,6 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "MaterialCompiler.h"
-#include "MaterialHLSLTree.h"
-#include "MaterialHLSLGenerator.h"
 #include "MaterialExpressionPrimitiveShape.h"
 
 FString ToString(const EPrimitiveShapeType Shape)
@@ -101,17 +99,6 @@ int32 FLegacyDiscFactory::NormalizeDistances(int32 Distances)
 	);
 }
 
-bool UMaterialExpressionPrimitiveShape::GenerateHLSLExpressionRect(FMaterialHLSLGenerator& Generator,
-                                                                   UE::HLSLTree::FScope& Scope, int32 OutputIndex, UE::HLSLTree::FExpression const*& OutExpression) const
-{
-	const UE::HLSLTree::FExpression* UVs = UV.AcquireHLSLExpressionOrExternalInput(Generator,
-		Scope,
-		UE::HLSLTree::Material::MakeInputTexCoord(0));
-
-	OutExpression = UVs;
-	return true;
-}
-
 #if WITH_ENGINE
 bool UMaterialExpressionPrimitiveShape::CanEditChange(const FProperty* InProperty) const
 {
@@ -163,18 +150,6 @@ bool UMaterialExpressionPrimitiveShape::CanEditChange(const FProperty* InPropert
 	return bIsEditable;
 }
 #endif
-
-bool UMaterialExpressionPrimitiveShape::GenerateHLSLExpression(FMaterialHLSLGenerator& Generator,
-                                                               UE::HLSLTree::FScope& Scope, int32 OutputIndex, UE::HLSLTree::FExpression const*& OutExpression) const
-{
-	switch (Shape)
-	{
-	case EPrimitiveShapeType::Rectangle:
-		return GenerateHLSLExpressionRect(Generator, Scope, OutputIndex, OutExpression);
-	default:
-		return false;
-	}
-}
 
 void UMaterialExpressionPrimitiveShape::GetCaption(TArray<FString>& OutCaptions) const
 {

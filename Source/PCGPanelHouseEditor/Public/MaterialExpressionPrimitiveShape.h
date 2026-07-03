@@ -93,8 +93,6 @@ class PCGPANELHOUSEEDITOR_API UMaterialExpressionPrimitiveShape : public UMateri
 {
 	GENERATED_BODY()
 
-	bool GenerateHLSLExpressionRect(FMaterialHLSLGenerator& Generator, UE::HLSLTree::FScope& Scope, int32 OutputIdx, UE::HLSLTree::FExpression const*& Expression) const;
-	
 public:
 	
 	UPROPERTY(meta = (RequiredInput = "false", ToolTip = "Manipulate UVs to create primitive 2D shapes"))
@@ -132,7 +130,6 @@ public:
 #endif
 	}
 	
-	virtual bool GenerateHLSLExpression(FMaterialHLSLGenerator& Generator, UE::HLSLTree::FScope& Scope, int32 OutputIndex, UE::HLSLTree::FExpression const*& OutExpression) const override;
 	virtual void GetCaption(TArray<FString>& OutCaptions) const override;
 	virtual FString GetDescription() const override;
 	virtual void GetExpressionToolTip(TArray<FString>& OutToolTip) override;

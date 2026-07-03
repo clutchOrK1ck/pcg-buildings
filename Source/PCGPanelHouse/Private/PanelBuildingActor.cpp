@@ -2,10 +2,12 @@
 
 
 #include "PanelBuildingActor.h"
+
 #include "Framework/Notifications/NotificationManager.h"
 #include "Widgets/Notifications/SNotificationList.h"
 #include "PBGrammar.h"
 #include "Algo/AnyOf.h"
+#include "Components/DynamicMeshComponent.h"
 
 
 // Sets default values
@@ -14,8 +16,13 @@ APanelBuildingActor::APanelBuildingActor()
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
-	PCG = CreateDefaultSubobject<UPCGComponent>("PCG");
+	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+
 	Boundaries = CreateDefaultSubobject<UPanelBuildingBounds>("Boundaries");
+	Boundaries->SetupAttachment(RootComponent);
+	
+	PCG = CreateDefaultSubobject<UPCGComponent>("PCG");
+	PCG->SetIsPartitioned(false);
 }
 
 void APanelBuildingActor::OnConstruction(const FTransform& Transform)
@@ -43,9 +50,13 @@ void APanelBuildingActor::OnConstruction(const FTransform& Transform)
 				Panels);
 
 			// set the boundaries component to match the size of the generated building
-			Boundaries->Width = GeneratedDimensions.GetSize().Y;
-			Boundaries->Depth = GeneratedDimensions.GetSize().X;
-			Boundaries->Height = GeneratedDimensions.GetSize().Z;
+			// prevent infinite construction recursion
+			Boundaries->ReconstructOwningActorOnChange = false;
+			Boundaries->SetWidthDepthHeight(
+				GeneratedDimensions.GetSize().Y,
+				GeneratedDimensions.GetSize().X,
+				GeneratedDimensions.GetSize().Z);
+			Boundaries->ReconstructOwningActorOnChange = true;
 
 			FloorHeight = PanelConfig[0]->Height;
 			BuildingHeight = GeneratedDimensions.GetExtent().Z * 2.;
@@ -53,6 +64,8 @@ void APanelBuildingActor::OnConstruction(const FTransform& Transform)
 
 		if (PCG->GetGraph() != nullptr)
 		{
+			UE_LOG(LogTemp, Display, TEXT("Regen PCG graph"));
+			PCG->SetIsPartitioned(false);
 			PCG->GenerateLocal(true);
 		}
 	}
@@ -120,5 +133,20 @@ bool APanelBuildingActor::IsValidPanelBuildingConfig(FString& OutErrorMessage, F
 void APanelBuildingActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+void APanelBuildingActor::ApplyRoofMaterials()
+{
+	UE_LOG(LogTemp, Display, TEXT("Applying Roof Materials"));
+	
+	// at the moment we assume the roof component is the only dynamesh component on this building
+	auto RoofDynameshComponent = FindComponentByClass<UDynamicMeshComponent>();
+
+	if (RoofDynameshComponent && RoofMaterial)
+	{
+		RoofDynameshComponent->SetMaterial(0, RoofMaterial);
+	}
+
+	UE_LOG(LogTemp, Display, TEXT("Applied Roof Materials"));
 }
 
