@@ -10,7 +10,7 @@
  * 
  */
 UCLASS()
-class PCGPANELHOUSEEDITOR_API UPBPanelLayoutFactory : public UFactory
+class UPBPanelLayoutFactory : public UFactory
 {
 	GENERATED_BODY()
 

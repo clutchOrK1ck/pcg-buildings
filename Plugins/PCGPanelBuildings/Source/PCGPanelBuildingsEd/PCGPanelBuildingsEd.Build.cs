@@ -1,8 +1,8 @@
 ﻿using UnrealBuildTool;
 
-public class PCGPanelHouseEditor : ModuleRules
+public class PCGPanelBuildingsEd : ModuleRules
 {
-    public PCGPanelHouseEditor(ReadOnlyTargetRules Target) : base(Target)
+    public PCGPanelBuildingsEd(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
@@ -20,6 +20,9 @@ public class PCGPanelHouseEditor : ModuleRules
                 "Engine",
                 "Slate",
                 "SlateCore",
+                "PCGPanelBuildings",
+                "MessageLog",
+                "UnrealEd",
             }
         );
     }

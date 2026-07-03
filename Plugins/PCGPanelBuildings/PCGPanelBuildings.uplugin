@@ -1,0 +1,28 @@
+﻿{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "PCGPanelBuildings",
+	"Description": "PCG and C++ utilities for procedural generation of panel buildings",
+	"Category": "Other",
+	"CreatedBy": "clutchOrK1ck",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": true,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "PCGPanelBuildings",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "PCGPanelBuildingsEd",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	]
+}

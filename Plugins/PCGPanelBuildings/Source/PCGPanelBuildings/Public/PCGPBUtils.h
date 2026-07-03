@@ -11,7 +11,7 @@
  * 
  */
 UCLASS()
-class PCGPANELHOUSE_API UPCGPBUtils : public UBlueprintFunctionLibrary
+class PCGPANELBUILDINGS_API UPCGPBUtils : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 

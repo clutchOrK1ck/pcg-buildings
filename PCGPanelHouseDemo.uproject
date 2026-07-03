@@ -58,6 +58,10 @@
         {
             "Name": "SizeBox",
             "Enabled": true
+        },
+        {
+            "Name": "PCGPanelBuildings",
+            "Enabled": true
         }
 	]
 }

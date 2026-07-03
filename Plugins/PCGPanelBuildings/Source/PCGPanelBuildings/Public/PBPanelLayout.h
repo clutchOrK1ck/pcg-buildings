@@ -12,7 +12,7 @@
  * specifically, it contains width/height of the panel, presence, size, and position of a window etc.
  */
 UCLASS(BlueprintType)
-class PCGPANELHOUSE_API UPBPanelLayout : public UObject
+class PCGPANELBUILDINGS_API UPBPanelLayout : public UObject
 {
 	GENERATED_BODY()
 

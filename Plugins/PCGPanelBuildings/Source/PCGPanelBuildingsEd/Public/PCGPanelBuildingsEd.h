@@ -1,0 +1,18 @@
+﻿#pragma once
+
+#include "CoreMinimal.h"
+#include "FPBPanelLayoutAssetActions.h"
+#include "Modules/ModuleManager.h"
+
+class FPCGPanelBuildingsEdModule : public IModuleInterface
+{
+	TSharedPtr<FPBPanelLayoutAssetActions> PBPanelLayoutAssetActions;
+	EAssetTypeCategories::Type AssetCategoryId {EAssetTypeCategories::Misc};
+
+	void RegisterMessageLogCategory();
+	void UnregisterMessageLogCategory();
+	
+public:
+    virtual void StartupModule() override;
+    virtual void ShutdownModule() override;
+};

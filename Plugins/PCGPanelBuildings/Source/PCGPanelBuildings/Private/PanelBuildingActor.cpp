@@ -7,7 +7,6 @@
 #include "Widgets/Notifications/SNotificationList.h"
 #include "PBGrammar.h"
 #include "Algo/AnyOf.h"
-#include "Components/DynamicMeshComponent.h"
 
 
 // Sets default values
@@ -133,20 +132,5 @@ bool APanelBuildingActor::IsValidPanelBuildingConfig(FString& OutErrorMessage, F
 void APanelBuildingActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-}
-
-void APanelBuildingActor::ApplyRoofMaterials()
-{
-	UE_LOG(LogTemp, Display, TEXT("Applying Roof Materials"));
-	
-	// at the moment we assume the roof component is the only dynamesh component on this building
-	auto RoofDynameshComponent = FindComponentByClass<UDynamicMeshComponent>();
-
-	if (RoofDynameshComponent && RoofMaterial)
-	{
-		RoofDynameshComponent->SetMaterial(0, RoofMaterial);
-	}
-
-	UE_LOG(LogTemp, Display, TEXT("Applied Roof Materials"));
 }
 

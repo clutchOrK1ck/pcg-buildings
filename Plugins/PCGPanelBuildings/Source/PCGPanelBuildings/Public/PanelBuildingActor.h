@@ -13,7 +13,7 @@ const FName GRAPH_PARAM_NAME_MAX_HEIGHT = FName("MaximumHeight");
 const FName GRAPH_PARAM_NAME_FLOOR_HEIGHT = FName("FloorHeight");
 
 UCLASS()
-class PCGPANELHOUSE_API APanelBuildingActor : public AActor
+class PCGPANELBUILDINGS_API APanelBuildingActor : public AActor
 {
 	GENERATED_BODY()
 
@@ -70,7 +70,4 @@ public:
 	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
-	UFUNCTION(BlueprintCallable, CallInEditor)
-	void ApplyRoofMaterials();
 };
