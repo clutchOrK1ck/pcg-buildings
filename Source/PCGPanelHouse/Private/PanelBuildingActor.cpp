@@ -18,7 +18,7 @@ APanelBuildingActor::APanelBuildingActor()
 
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 
-	Boundaries = CreateDefaultSubobject<UPanelBuildingBounds>("Boundaries");
+	Boundaries = CreateDefaultSubobject<UBoxBounds>("Boundaries");
 	Boundaries->SetupAttachment(RootComponent);
 	
 	PCG = CreateDefaultSubobject<UPCGComponent>("PCG");

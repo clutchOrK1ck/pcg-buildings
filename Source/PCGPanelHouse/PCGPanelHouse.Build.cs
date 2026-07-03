@@ -8,7 +8,7 @@ public class PCGPanelHouse : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "PCG" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "PCG", "SizeBox" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "StructUtils", "GeometryFramework" });
 

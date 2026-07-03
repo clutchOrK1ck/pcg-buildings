@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "PanelBuildingBounds.generated.h"
+#include "BoxBounds.generated.h"
 
 
 /**
@@ -13,7 +13,7 @@
  * it's mainly a visual fidelity and a helper for editing the panel building bounds
  */
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
-class PCGPANELHOUSE_API UPanelBuildingBounds : public UPrimitiveComponent
+class SIZEBOX_API UBoxBounds : public UPrimitiveComponent
 {
 	GENERATED_BODY()
 
@@ -21,7 +21,7 @@ class PCGPANELHOUSE_API UPanelBuildingBounds : public UPrimitiveComponent
 	
 public:
 	// Sets default values for this component's properties
-	UPanelBuildingBounds();
+	UBoxBounds();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float Width;

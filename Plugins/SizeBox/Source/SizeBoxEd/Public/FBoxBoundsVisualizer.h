@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "ComponentVisualizer.h"
-#include "PanelBuildingBounds.h"
+#include "BoxBounds.h"
 
 enum EPanelBuildingDimension : int
 {
@@ -12,11 +12,11 @@ enum EPanelBuildingDimension : int
 
 struct HPanelBuildingBoundsHitProxy : public HComponentVisProxy
 {
-	HPanelBuildingBoundsHitProxy(const UPanelBuildingBounds* BoundsComponent) : HComponentVisProxy(BoundsComponent) {}
+	HPanelBuildingBoundsHitProxy(const UBoxBounds* BoundsComponent) : HComponentVisProxy(BoundsComponent) {}
 
-	UPanelBuildingBounds* GetBoundsComponent() const
+	UBoxBounds* GetBoundsComponent() const
 	{
-		return Cast<UPanelBuildingBounds>(const_cast<UActorComponent*>(Component.Get()));
+		return Cast<UBoxBounds>(const_cast<UActorComponent*>(Component.Get()));
 	}
 
 	AActor* GetActor() const
@@ -34,7 +34,7 @@ public:
 
 	virtual EMouseCursor::Type GetMouseCursor() override;
 	
-	HPanelBuildingBoundsControlHitProxy(const UPanelBuildingBounds* BoundsComponent,
+	HPanelBuildingBoundsControlHitProxy(const UBoxBounds* BoundsComponent,
 	                                    const EPanelBuildingDimension ControlledDimension) :
 		HPanelBuildingBoundsHitProxy(BoundsComponent),
 		ControlledDimension(ControlledDimension)
@@ -50,23 +50,23 @@ public:
 struct FCachedVisualizerState
 {
 	AActor* ComponentOwningActor;
-	UPanelBuildingBounds* VisualizedComponent {nullptr};
+	UBoxBounds* VisualizedComponent {nullptr};
 	EPanelBuildingDimension ActiveControl {None};
 };
 
 struct FEditedComponentCache
 {
 	AActor* EditedActor {nullptr};
-	UPanelBuildingBounds* EditedComponent {nullptr};
+	UBoxBounds* EditedComponent {nullptr};
 
-	void Reset(UPanelBuildingBounds* Component)
+	void Reset(UBoxBounds* Component)
 	{
 		EditedComponent = Component;
 		EditedActor = Component->GetOwner();
 	}
 };
 
-class FPanelBuildingBoundsVisualizer : public FComponentVisualizer
+class FBoxBoundsVisualizer : public FComponentVisualizer
 {
 	FEditedComponentCache EditedComponentCache;
 	EPanelBuildingDimension SelectedControl {None};

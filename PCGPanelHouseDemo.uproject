@@ -54,6 +54,10 @@
 		{
 			"Name": "HDRIBackdrop",
 			"Enabled": true
-		}
+		},
+        {
+            "Name": "SizeBox",
+            "Enabled": true
+        }
 	]
 }

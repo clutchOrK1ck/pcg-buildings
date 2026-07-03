@@ -1,8 +1,8 @@
 ﻿using UnrealBuildTool;
 
-public class PCGPanelHouseEditor : ModuleRules
+public class SizeBoxEd : ModuleRules
 {
-    public PCGPanelHouseEditor(ReadOnlyTargetRules Target) : base(Target)
+    public SizeBoxEd(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
@@ -21,9 +21,7 @@ public class PCGPanelHouseEditor : ModuleRules
                 "Engine",
                 "Slate",
                 "SlateCore",
-                "PCGPanelHouse",
                 "UnrealEd",
-                "MessageLog"
             }
         );
     }

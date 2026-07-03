@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "PanelBuildingBounds.h"
+#include "BoxBounds.h"
 #include "PCGComponent.h"
 #include "PBGrammar.h"
 #include "GameFramework/Actor.h"
@@ -63,7 +63,7 @@ protected:
 
 public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
-	UPanelBuildingBounds* Boundaries;
+	UBoxBounds* Boundaries;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Roof")
 	UMaterialInterface* RoofMaterial;

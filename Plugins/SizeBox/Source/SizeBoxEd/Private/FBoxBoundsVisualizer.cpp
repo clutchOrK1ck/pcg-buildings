@@ -1,5 +1,5 @@
-﻿#include "FPanelBuildingBoundsVisualizer.h"
-#include "PanelBuildingBounds.h"
+﻿#include "FBoxBoundsVisualizer.h"
+#include "BoxBounds.h"
 #include "SceneManagement.h"
 
 EMouseCursor::Type HPanelBuildingBoundsControlHitProxy::GetMouseCursor()
@@ -7,7 +7,7 @@ EMouseCursor::Type HPanelBuildingBoundsControlHitProxy::GetMouseCursor()
 	return EMouseCursor::Type::Hand;
 }
 
-FVector GetPanelBuildingControlLocation(const UPanelBuildingBounds* BoundsComponent,
+FVector GetPanelBuildingControlLocation(const UBoxBounds* BoundsComponent,
 										const EPanelBuildingDimension Dimension)
 {
 	// one of these might be null when recompiling blueprints and such
@@ -41,24 +41,24 @@ FVector GetPanelBuildingControlLocation(const UPanelBuildingBounds* BoundsCompon
 	}
 }
 
-bool FPanelBuildingBoundsVisualizer::GetWidgetLocation(const FEditorViewportClient* ViewportClient,
+bool FBoxBoundsVisualizer::GetWidgetLocation(const FEditorViewportClient* ViewportClient,
                                                        FVector& OutLocation) const
 {
 	if (SelectedControl != None && GetEditedComponent() != nullptr)
 	{
-		OutLocation = GetPanelBuildingControlLocation(Cast<UPanelBuildingBounds>(GetEditedComponent()), SelectedControl);
+		OutLocation = GetPanelBuildingControlLocation(Cast<UBoxBounds>(GetEditedComponent()), SelectedControl);
 		return true;
 	}
 	
 	return false;
 }
 
-UActorComponent* FPanelBuildingBoundsVisualizer::GetEditedComponent() const
+UActorComponent* FBoxBoundsVisualizer::GetEditedComponent() const
 {
 	return EditedComponentCache.EditedComponent;
 }
 
-bool FPanelBuildingBoundsVisualizer::GetCustomInputCoordinateSystem(const FEditorViewportClient* ViewportClient,
+bool FBoxBoundsVisualizer::GetCustomInputCoordinateSystem(const FEditorViewportClient* ViewportClient,
 	FMatrix& OutMatrix) const
 {
 	if (EditedComponentCache.EditedComponent && EditedComponentCache.EditedComponent->GetOwner())
@@ -70,7 +70,7 @@ bool FPanelBuildingBoundsVisualizer::GetCustomInputCoordinateSystem(const FEdito
 	return false;
 }
 
-bool FPanelBuildingBoundsVisualizer::HandleInputDelta(FEditorViewportClient* ViewportClient, FViewport* Viewport,
+bool FBoxBoundsVisualizer::HandleInputDelta(FEditorViewportClient* ViewportClient, FViewport* Viewport,
                                                       FVector& DeltaTranslate, FRotator& DeltaRotate,
                                                       FVector& DeltaScale)
 {
@@ -93,7 +93,7 @@ bool FPanelBuildingBoundsVisualizer::HandleInputDelta(FEditorViewportClient* Vie
 	}
 }
 
-bool FPanelBuildingBoundsVisualizer::VisProxyHandleClick(FEditorViewportClient* InViewportClient,
+bool FBoxBoundsVisualizer::VisProxyHandleClick(FEditorViewportClient* InViewportClient,
                                                          HComponentVisProxy* VisProxy,
                                                          const FViewportClick& Click)
 {
@@ -121,12 +121,12 @@ bool FPanelBuildingBoundsVisualizer::VisProxyHandleClick(FEditorViewportClient* 
 	return false;
 }
 
-void FPanelBuildingBoundsVisualizer::DrawVisualization(const UActorComponent* Component, const FSceneView* View,
+void FBoxBoundsVisualizer::DrawVisualization(const UActorComponent* Component, const FSceneView* View,
                                                        FPrimitiveDrawInterface* PDI)
 {
 	if (Component == nullptr) return;
-	if (Component->GetClass() != UPanelBuildingBounds::StaticClass()) return;
-	auto BoundariesComponent = Cast<UPanelBuildingBounds>(const_cast<UActorComponent*>(Component));
+	if (Component->GetClass() != UBoxBounds::StaticClass()) return;
+	auto BoundariesComponent = Cast<UBoxBounds>(const_cast<UActorComponent*>(Component));
 	
 	if (EditedComponentCache.EditedActor != BoundariesComponent->GetOwner())
 	{

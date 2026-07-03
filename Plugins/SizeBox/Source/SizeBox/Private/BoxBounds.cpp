@@ -1,10 +1,10 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "PanelBuildingBounds.h"
+#include "BoxBounds.h"
 
 
-void UPanelBuildingBounds::PostSizeUpdate()
+void UBoxBounds::PostSizeUpdate()
 {
 	if (HasAnyFlags(RF_ClassDefaultObject | RF_ArchetypeObject) || IsTemplate())
 	{
@@ -23,16 +23,17 @@ void UPanelBuildingBounds::PostSizeUpdate()
 }
 
 // Sets default values for this component's properties
-UPanelBuildingBounds::UPanelBuildingBounds()
+UBoxBounds::UBoxBounds()
 {
 	PrimaryComponentTick.bCanEverTick = false;
-	ReconstructOwningActorOnChange = true;
 	
+	ReconstructOwningActorOnChange = false;
 	SetWidthDepthHeight(1500., 700., 500.);
+	ReconstructOwningActorOnChange = true;
 }
 
 
-FBox UPanelBuildingBounds::GetBounds() const
+FBox UBoxBounds::GetBounds() const
 {
 	return FBox{
 		FVector{-Depth, 0.f, 0.f},
@@ -40,7 +41,7 @@ FBox UPanelBuildingBounds::GetBounds() const
 	};
 }
 
-void UPanelBuildingBounds::SetWidthDepthHeight(float InWidth, float InDepth, float InHeight)
+void UBoxBounds::SetWidthDepthHeight(float InWidth, float InDepth, float InHeight)
 {
 	this->Width = InWidth;
 	this->Depth = InDepth;
@@ -49,7 +50,7 @@ void UPanelBuildingBounds::SetWidthDepthHeight(float InWidth, float InDepth, flo
 	PostSizeUpdate();
 }
 
-void UPanelBuildingBounds::Expand(int Axis, float Value)
+void UBoxBounds::Expand(int Axis, float Value)
 {
 	switch (Axis)
 	{
@@ -69,12 +70,12 @@ void UPanelBuildingBounds::Expand(int Axis, float Value)
 	PostSizeUpdate();
 }
 
-bool UPanelBuildingBounds::IsEditorOnly() const
+bool UBoxBounds::IsEditorOnly() const
 {
 	return true;
 }
 
-FBoxSphereBounds UPanelBuildingBounds::CalcBounds(const FTransform& LocalToWorld) const
+FBoxSphereBounds UBoxBounds::CalcBounds(const FTransform& LocalToWorld) const
 {
 	FBoxSphereBounds NewBounds;
 
@@ -91,12 +92,12 @@ FBoxSphereBounds UPanelBuildingBounds::CalcBounds(const FTransform& LocalToWorld
 }
 
 // Called when the game starts
-void UPanelBuildingBounds::BeginPlay()
+void UBoxBounds::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
-void UPanelBuildingBounds::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+void UBoxBounds::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	PostSizeUpdate();
 	Super::PostEditChangeProperty(PropertyChangedEvent);
