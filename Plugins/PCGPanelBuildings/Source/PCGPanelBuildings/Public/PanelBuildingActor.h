@@ -29,6 +29,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Panel Buildings")
 	float RoofHeight;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Panel Buildings")
+	float WindowFrameDepth;
 	
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Panel Buildings")
 	float FloorHeight;
