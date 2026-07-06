@@ -18,28 +18,28 @@ class PCGPANELBUILDINGS_API APanelBuildingActor : public AActor
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Panel Buildings")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Building Configuration")
 	FString Grammar;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Panel Buildings")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Building Configuration")
 	TArray<UPBPanelLayout*> PanelConfig;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Panel Buildings")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Building Configuration")
 	float BasementHeight;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Panel Buildings")
-	float RoofHeight;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Building Configuration")
+	float AtticHeight;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Panel Buildings")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Building Configuration")
 	float WindowFrameDepth;
 	
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Panel Buildings")
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Building Calculated Params")
 	float FloorHeight;
 
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Panel Buildings")
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Building Calculated Params")
 	float BuildingHeight;
 
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Panel Buildings")
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Building Calculated Params")
 	int NumFloors;
 	
 	// Sets default values for this actor's properties

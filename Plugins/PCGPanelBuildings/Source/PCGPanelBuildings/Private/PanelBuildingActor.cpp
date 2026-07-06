@@ -42,7 +42,7 @@ void APanelBuildingActor::OnConstruction(const FTransform& Transform)
 				RuleSet,
 				Boundaries->GetBounds(),
 				BasementHeight,
-				RoofHeight,
+				AtticHeight,
 				GeneratedDimensions,
 				NumFloors,
 				PanelConfig,
