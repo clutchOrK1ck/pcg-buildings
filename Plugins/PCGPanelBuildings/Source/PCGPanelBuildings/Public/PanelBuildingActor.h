@@ -31,7 +31,7 @@ public:
 	float AtticHeight;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Building Configuration")
-	float WindowFrameDepth;
+	float WindowFrameDepth = 12.7;
 	
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Building Calculated Params")
 	float FloorHeight;
@@ -67,9 +67,6 @@ protected:
 public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
 	UBoxBounds* Boundaries;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Roof")
-	UMaterialInterface* RoofMaterial;
 	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
