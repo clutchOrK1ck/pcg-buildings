@@ -23,6 +23,7 @@ public class PCGPanelBuildingsEd : ModuleRules
                 "PCGPanelBuildings",
                 "MessageLog",
                 "UnrealEd",
+                "Projects",
             }
         );
     }

@@ -1,4 +1,6 @@
 ﻿#include "PCGPanelBuildingsEd.h"
+
+#include "FPanelBuildingsPluginStyle.h"
 #include "MessageLogModule.h"
 
 #define LOCTEXT_NAMESPACE "FPCGPanelBuildingsEdModule"
@@ -41,6 +43,7 @@ void FPCGPanelBuildingsEdModule::StartupModule()
 	AssetTools.RegisterAssetTypeActions(PBPanelLayoutAssetActions.ToSharedRef());
 
 	RegisterMessageLogCategory();
+	FPanelBuildingsPluginStyle::Register();
 }
 
 void FPCGPanelBuildingsEdModule::ShutdownModule()
@@ -49,6 +52,7 @@ void FPCGPanelBuildingsEdModule::ShutdownModule()
 	FAssetToolsModule::GetModule().Get().UnregisterAssetTypeActions(PBPanelLayoutAssetActions.ToSharedRef());
 
 	UnregisterMessageLogCategory();
+	FPanelBuildingsPluginStyle::Unregister();
 }
 
 #undef LOCTEXT_NAMESPACE
