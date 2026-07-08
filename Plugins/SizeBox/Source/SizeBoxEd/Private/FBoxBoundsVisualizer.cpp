@@ -44,7 +44,7 @@ FVector GetPanelBuildingControlLocation(const UBoxBounds* BoundsComponent,
 bool FBoxBoundsVisualizer::GetWidgetLocation(const FEditorViewportClient* ViewportClient,
                                                        FVector& OutLocation) const
 {
-	if (SelectedControl != None && GetEditedComponent() != nullptr)
+	if (SelectedControl != None && GetEditedComponent() && GetEditedComponent()->IsSelectedInEditor())
 	{
 		OutLocation = GetPanelBuildingControlLocation(Cast<UBoxBounds>(GetEditedComponent()), SelectedControl);
 		return true;
@@ -74,7 +74,7 @@ bool FBoxBoundsVisualizer::HandleInputDelta(FEditorViewportClient* ViewportClien
                                                       FVector& DeltaTranslate, FRotator& DeltaRotate,
                                                       FVector& DeltaScale)
 {
-	if (!EditedComponentCache.EditedComponent || SelectedControl == None) return false;
+	if (!(SelectedControl != None && GetEditedComponent() && GetEditedComponent()->IsSelectedInEditor())) return false;
 
 	// find local delta transalte (we are supplied with a delta translate in world space)
 	auto LocalTranslate = EditedComponentCache.EditedComponent->GetOwner()->GetActorRotation().GetInverse().RotateVector(DeltaTranslate);
@@ -102,8 +102,17 @@ bool FBoxBoundsVisualizer::VisProxyHandleClick(FEditorViewportClient* InViewport
 		if (VisProxy->IsA(HPanelBuildingBoundsControlHitProxy::StaticGetType()))
 		{
 			auto Proxy = static_cast<HPanelBuildingBoundsControlHitProxy*>(VisProxy);
+
+			/*// click on the same control deselects it
+			if (EditedComponentCache.EditedComponent == Proxy->GetBoundsComponent() && SelectedControl == Proxy->GetControlledDimension())
+			{
+				SelectedControl = None;
+				return true;
+			}*/
+			
 			EditedComponentCache.Reset(Proxy->GetBoundsComponent());
 			SelectedControl = Proxy->GetControlledDimension();
+			
 			return true;
 		}
 
