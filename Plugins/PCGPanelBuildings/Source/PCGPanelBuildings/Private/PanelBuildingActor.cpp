@@ -70,7 +70,7 @@ void APanelBuildingActor::OnConstruction(const FTransform& Transform)
 	}
 }
 
-void APanelBuildingActor::Validate()
+void APanelBuildingActor::ValidateGrammar()
 {
 	FString ValidationError;
 	FPBRuleSet RuleSet;

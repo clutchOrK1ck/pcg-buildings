@@ -18,7 +18,7 @@ class PCGPANELBUILDINGS_API APanelBuildingActor : public AActor
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Building Configuration")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Interp, Category="Building Configuration")
 	FString Grammar;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Building Configuration")
@@ -47,8 +47,8 @@ public:
 
 	virtual void OnConstruction(const FTransform& Transform) override;
 	
-	UFUNCTION(CallInEditor, Category="Panel Buildings")
-	void Validate();
+	UFUNCTION(CallInEditor, Category="Building Configuration", DisplayName="Validate Grammar")
+	void ValidateGrammar();
 	
 protected:
 
