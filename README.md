@@ -1,1 +1,1 @@
-# spline-foliage
+PCG Building Generator is a tool for generation of highly configurable panel-type buildings. Watch the tool demo [here](https://www.clutchorkick.dev/projects/pcg-buildings) or read a blog post with an overview [here](https://conspectus-amber.vercel.app/blog/pcg-buildings/).
